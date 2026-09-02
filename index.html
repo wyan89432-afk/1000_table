@@ -3,129 +3,103 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>1000 Table — Search &amp; Connect</title>
+<title>1000 Table | 000–999</title>
 <style>
-  :root{
-    --yellow:#fbbf24;
-    --green:#16a34a;
-    --red:#dc2626;
-    --bg:#0f172a;
-    --card:#1e293b;
-    --text:#e2e8f0;
-    --border:#334155;
-  }
-  *{box-sizing:border-box;}
-  body{
-    margin:0;
-    font-family:'Segoe UI', system-ui, sans-serif;
-    background:var(--bg);
-    color:var(--text);
-    min-height:100vh;
-  }
-  header{
-    padding:20px;
-    text-align:center;
-    background:#111827;
-    border-bottom:1px solid var(--border);
-  }
-  h1{margin:0;color:var(--yellow);font-size:clamp(24px,5vw,42px)}
-  .subtitle{opacity:.75;margin-top:8px}
-  main{max-width:1100px;margin:auto;padding:20px}
-  .panel{
-    background:var(--card);
-    border:1px solid var(--border);
-    border-radius:14px;
-    padding:18px;
-    margin-bottom:18px;
-  }
-  .controls{display:flex;gap:10px;flex-wrap:wrap}
-  input,button{
-    font:inherit;padding:11px 14px;border-radius:9px;border:1px solid var(--border);
-  }
-  input{background:#0f172a;color:white;flex:1;min-width:180px}
-  button{background:var(--yellow);color:#111827;font-weight:700;cursor:pointer}
-  button:hover{filter:brightness(1.08)}
-  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
-  .stat{padding:15px;background:#111827;border-radius:10px;text-align:center}
-  .stat b{display:block;font-size:24px;color:var(--yellow)}
-  table{width:100%;border-collapse:collapse;margin-top:15px}
-  th,td{padding:10px;border-bottom:1px solid var(--border);text-align:center}
-  th{background:#111827;position:sticky;top:0}
-  .table-wrap{max-height:65vh;overflow:auto;border-radius:10px;border:1px solid var(--border)}
-  tr.match{background:rgba(251,191,36,.18)}
-  .empty{padding:20px;text-align:center;opacity:.7}
-  footer{text-align:center;padding:25px;opacity:.6}
+:root{--bg:#101827;--panel:#1c2637;--line:#3a4659;--text:#eef2f7;--yellow:#ffe600;--red:#ff2020;--green:#12a84b}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,system-ui,sans-serif}
+header{text-align:center;padding:18px 12px;border-bottom:1px solid var(--line);background:#121a28}
+h1{margin:0;color:var(--yellow);font-size:30px}.sub{margin-top:7px;color:#aab4c3;font-size:14px}
+main{max-width:1400px;margin:auto;padding:14px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:15px;margin-bottom:14px}
+label{display:block;font-weight:bold;margin-bottom:8px} textarea{width:100%;height:150px;resize:vertical;background:#0b1220;color:#fff;border:1px solid var(--line);border-radius:10px;padding:12px;font:16px/1.5 monospace;outline:none}
+textarea:focus{border-color:var(--yellow)}.hint{font-size:13px;color:#aab4c3;margin-top:8px}.buttons{display:flex;gap:9px;margin-top:10px;flex-wrap:wrap}
+button{border:0;border-radius:9px;padding:10px 17px;font-weight:bold;cursor:pointer;background:var(--yellow);color:#111}button.secondary{background:#344154;color:white}
+.stats{display:flex;gap:12px;flex-wrap:wrap}.stat{background:#111a29;border-radius:9px;padding:9px 14px}.stat b{color:var(--yellow)}
+.table-wrap{position:relative;overflow:auto;border:1px solid var(--line);border-radius:10px;background:#fff;max-height:72vh}
+table{border-collapse:collapse;width:100%;min-width:900px;table-layout:fixed;position:relative;z-index:1}
+th,td{border:1px solid #aab0b9;text-align:center;height:34px;padding:2px;color:#111;font-family:monospace;font-size:14px}
+th{height:42px;background:#e9edf2;font-family:Arial,sans-serif;font-weight:800;position:sticky;top:0;z-index:5}
+td{background:#fff;transition:.15s}td.hit{background:var(--yellow)!important;font-weight:900;box-shadow:inset 0 0 0 2px #d4a900}
+#svgLayer{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:3;overflow:visible}
+.arrow-label{fill:var(--green);stroke:#fff;stroke-width:1}.arrow-text{fill:#fff;font-weight:bold;font-size:14px;text-anchor:middle;dominant-baseline:middle}
+footer{text-align:center;color:#8090a5;padding:20px;font-size:13px}
+@media(max-width:600px){main{padding:9px}.panel{padding:11px}h1{font-size:25px}textarea{height:130px}}
 </style>
 </head>
 <body>
-<header>
-  <h1>1000 Table</h1>
-  <div class="subtitle">Search &amp; Connect Number Table</div>
-</header>
+<header><h1>1000 TABLE</h1><div class="sub">000 မှ 999 အထိ • 10 Columns × 100 Rows • Paste & Connect</div></header>
 <main>
-  <section class="panel">
-    <div class="controls">
-      <input id="search" type="search" placeholder="နံပါတ် ရိုက်ပြီး ရှာပါ..." autocomplete="off">
-      <button id="clearBtn">Clear</button>
-      <button id="randomBtn">Random</button>
-    </div>
-  </section>
-  <section class="panel">
-    <div class="stats">
-      <div class="stat"><b id="total">1000</b>Total Numbers</div>
-      <div class="stat"><b id="shown">1000</b>Showing</div>
-      <div class="stat"><b id="matches">0</b>Matches</div>
-    </div>
-  </section>
-  <section class="panel">
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>#</th><th>Number</th><th>Group</th></tr></thead>
-        <tbody id="tbody"></tbody>
-      </table>
-    </div>
-  </section>
-</main>
-<footer>1000 Table Web App</footer>
-<script>
-const data = Array.from({length:1000},(_,i)=>({
-  id:i+1,
-  number:String(i+1).padStart(4,'0'),
-  group:'Group '+(Math.floor(i/100)+1)
-}));
-const tbody=document.getElementById('tbody');
-const search=document.getElementById('search');
-const shown=document.getElementById('shown');
-const matches=document.getElementById('matches');
+<section class="panel">
+<label for="numbers">Search / Paste Numbers (1 Column • Unlimited Rows)</label>
+<textarea id="numbers" placeholder="ဥပမာ:
+015
+127
+342
+908
 
-function render(list, query=''){
-  tbody.innerHTML='';
-  if(!list.length){
-    tbody.innerHTML='<tr><td colspan="3" class="empty">No results found</td></tr>';
-  } else {
-    const frag=document.createDocumentFragment();
-    list.forEach(x=>{
-      const tr=document.createElement('tr');
-      if(query) tr.className='match';
-      tr.innerHTML='<td>'+x.id+'</td><td>'+x.number+'</td><td>'+x.group+'</td>';
-      frag.appendChild(tr);
-    });
-    tbody.appendChild(frag);
-  }
-  shown.textContent=list.length;
-  matches.textContent=query?list.length:0;
+Row တစ်ခုလျှင် Number တစ်ခု paste ချပါ။"></textarea>
+<div class="buttons"><button id="apply">Search & Draw</button><button id="clear" class="secondary">Clear</button></div>
+<div class="hint">အစဉ်လိုက် Row 1 → Row 2 → Row 3 ... ကို 🟡 Highlight ပြီး 🔴 Arrow ဖြင့် Join လုပ်ပေးမည်။ Arrow တစ်ခုချင်းစီတွင် အစဉ်နံပါတ်ကို 💚 Green box + White letter ဖြင့်ပြမည်။</div>
+</section>
+<section class="panel stats"><div class="stat">Total: <b>1000</b></div><div class="stat">Pasted Rows: <b id="count">0</b></div><div class="stat">Found: <b id="found">0</b></div></section>
+<section class="panel">
+<div class="table-wrap" id="wrap">
+<svg id="svgLayer"></svg>
+<table id="table"><thead><tr id="head"></tr></thead><tbody id="body"></tbody></table>
+</div>
+</section>
+</main>
+<footer>1000 Table • 000 → 999</footer>
+<script>
+const head=document.getElementById('head'), body=document.getElementById('body');
+const input=document.getElementById('numbers'), wrap=document.getElementById('wrap'), svg=document.getElementById('svgLayer');
+const cells=new Map();
+
+for(let c=0;c<10;c++){const th=document.createElement('th');th.textContent='for '+c;head.appendChild(th)}
+for(let r=0;r<100;r++){
+ const tr=document.createElement('tr');
+ for(let c=0;c<10;c++){
+  const n=c*100+r, td=document.createElement('td'), value=String(n).padStart(3,'0');
+  td.textContent=value;td.dataset.value=value;tr.appendChild(td);cells.set(value,td);
+ }
+ body.appendChild(tr);
 }
-function filter(){
-  const q=search.value.trim().toLowerCase();
-  render(q?data.filter(x=>x.number.includes(q)||x.group.toLowerCase().includes(q)):data,q);
+
+function parse(){
+ return input.value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean).map(x=>{
+  const m=x.match(/\d{1,3}/); if(!m)return null;
+  const n=Number(m[0]); return n>=0&&n<=999?String(n).padStart(3,'0'):null;
+ }).filter(x=>x!==null);
 }
-search.addEventListener('input',filter);
-document.getElementById('clearBtn').onclick=()=>{search.value='';filter();search.focus()};
-document.getElementById('randomBtn').onclick=()=>{
-  const n=data[Math.floor(Math.random()*data.length)].number;
-  search.value=n;filter();
-};
-render(data);
+function reset(){document.querySelectorAll('td.hit').forEach(x=>x.classList.remove('hit'));svg.innerHTML=''}
+function center(td){
+ const a=td.getBoundingClientRect(), w=wrap.getBoundingClientRect();
+ return {x:a.left-w.left+wrap.scrollLeft+a.width/2,y:a.top-w.top+wrap.scrollTop+a.height/2}
+}
+function drawArrow(a,b,num){
+ const ns='http://www.w3.org/2000/svg';
+ const line=document.createElementNS(ns,'line');
+ line.setAttribute('x1',a.x);line.setAttribute('y1',a.y);line.setAttribute('x2',b.x);line.setAttribute('y2',b.y);
+ line.setAttribute('stroke','#ff2020');line.setAttribute('stroke-width','3');line.setAttribute('marker-end','url(#arrowhead)');
+ svg.appendChild(line);
+ const mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+ const g=document.createElementNS(ns,'g');
+ const rect=document.createElementNS(ns,'rect');rect.setAttribute('x',mx-13);rect.setAttribute('y',my-13);rect.setAttribute('width','26');rect.setAttribute('height','26');rect.setAttribute('rx','6');rect.setAttribute('class','arrow-label');
+ const text=document.createElementNS(ns,'text');text.setAttribute('x',mx);text.setAttribute('y',my+1);text.setAttribute('class','arrow-text');text.textContent=num;
+ g.append(rect,text);svg.appendChild(g);
+}
+function draw(){
+ reset(); const list=parse(); document.getElementById('count').textContent=list.length;
+ const valid=list.filter(x=>cells.has(x));document.getElementById('found').textContent=valid.length;
+ valid.forEach(x=>cells.get(x).classList.add('hit'));
+ const rect=wrap.getBoundingClientRect();svg.setAttribute('width',Math.max(wrap.scrollWidth,rect.width));svg.setAttribute('height',Math.max(wrap.scrollHeight,rect.height));
+ const defs=document.createElementNS('http://www.w3.org/2000/svg','defs');
+ defs.innerHTML='<marker id="arrowhead" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#ff2020"/></marker>';svg.appendChild(defs);
+ for(let i=0;i<valid.length-1;i++)drawArrow(center(cells.get(valid[i])),center(cells.get(valid[i+1])),i+1);
+}
+document.getElementById('apply').onclick=draw;
+document.getElementById('clear').onclick=()=>{input.value='';draw()};
+input.addEventListener('input',draw);
+wrap.addEventListener('scroll',draw);
+window.addEventListener('resize',draw);
 </script>
-</body>
-</html>
+</body></html>
