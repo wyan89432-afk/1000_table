@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1000 Table — Search &amp; Connect</title>
+<style>
+  :root{
+    --yellow:#fbbf24;
+    --green:#16a34a;
+    --red:#dc2626;
+    --bg:#0f172a;
+    --card:#1e293b;
+    --text:#e2e8f0;
+    --border:#334155;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI', system-ui, sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    min-height:100vh;
+  }
+  header{
+    padding:20px;
+    text-align:center;
+    background:#111827;
+    border-bottom:1px solid var(--border);
+  }
+  h1{margin:0;color:var(--yellow);font-size:clamp(24px,5vw,42px)}
+  .subtitle{opacity:.75;margin-top:8px}
+  main{max-width:1100px;margin:auto;padding:20px}
+  .panel{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:18px;
+    margin-bottom:18px;
+  }
+  .controls{display:flex;gap:10px;flex-wrap:wrap}
+  input,button{
+    font:inherit;padding:11px 14px;border-radius:9px;border:1px solid var(--border);
+  }
+  input{background:#0f172a;color:white;flex:1;min-width:180px}
+  button{background:var(--yellow);color:#111827;font-weight:700;cursor:pointer}
+  button:hover{filter:brightness(1.08)}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+  .stat{padding:15px;background:#111827;border-radius:10px;text-align:center}
+  .stat b{display:block;font-size:24px;color:var(--yellow)}
+  table{width:100%;border-collapse:collapse;margin-top:15px}
+  th,td{padding:10px;border-bottom:1px solid var(--border);text-align:center}
+  th{background:#111827;position:sticky;top:0}
+  .table-wrap{max-height:65vh;overflow:auto;border-radius:10px;border:1px solid var(--border)}
+  tr.match{background:rgba(251,191,36,.18)}
+  .empty{padding:20px;text-align:center;opacity:.7}
+  footer{text-align:center;padding:25px;opacity:.6}
+</style>
+</head>
+<body>
+<header>
+  <h1>1000 Table</h1>
+  <div class="subtitle">Search &amp; Connect Number Table</div>
+</header>
+<main>
+  <section class="panel">
+    <div class="controls">
+      <input id="search" type="search" placeholder="နံပါတ် ရိုက်ပြီး ရှာပါ..." autocomplete="off">
+      <button id="clearBtn">Clear</button>
+      <button id="randomBtn">Random</button>
+    </div>
+  </section>
+  <section class="panel">
+    <div class="stats">
+      <div class="stat"><b id="total">1000</b>Total Numbers</div>
+      <div class="stat"><b id="shown">1000</b>Showing</div>
+      <div class="stat"><b id="matches">0</b>Matches</div>
+    </div>
+  </section>
+  <section class="panel">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Number</th><th>Group</th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+<footer>1000 Table Web App</footer>
+<script>
+const data = Array.from({length:1000},(_,i)=>({
+  id:i+1,
+  number:String(i+1).padStart(4,'0'),
+  group:'Group '+(Math.floor(i/100)+1)
+}));
+const tbody=document.getElementById('tbody');
+const search=document.getElementById('search');
+const shown=document.getElementById('shown');
+const matches=document.getElementById('matches');
+
+function render(list, query=''){
+  tbody.innerHTML='';
+  if(!list.length){
+    tbody.innerHTML='<tr><td colspan="3" class="empty">No results found</td></tr>';
+  } else {
+    const frag=document.createDocumentFragment();
+    list.forEach(x=>{
+      const tr=document.createElement('tr');
+      if(query) tr.className='match';
+      tr.innerHTML='<td>'+x.id+'</td><td>'+x.number+'</td><td>'+x.group+'</td>';
+      frag.appendChild(tr);
+    });
+    tbody.appendChild(frag);
+  }
+  shown.textContent=list.length;
+  matches.textContent=query?list.length:0;
+}
+function filter(){
+  const q=search.value.trim().toLowerCase();
+  render(q?data.filter(x=>x.number.includes(q)||x.group.toLowerCase().includes(q)):data,q);
+}
+search.addEventListener('input',filter);
+document.getElementById('clearBtn').onclick=()=>{search.value='';filter();search.focus()};
+document.getElementById('randomBtn').onclick=()=>{
+  const n=data[Math.floor(Math.random()*data.length)].number;
+  search.value=n;filter();
+};
+render(data);
+</script>
+</body>
+</html>
