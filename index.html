@@ -11,7 +11,8 @@ button{border:0;border-radius:9px;padding:10px 17px;font-weight:bold;cursor:poin
 .stats{display:flex;gap:12px;flex-wrap:wrap}.stat{background:#111a29;border-radius:9px;padding:9px 14px}.stat b{color:var(--yellow)}.zoom-bar,.cat-bar{justify-content:center;background:#111a29;padding:10px;border-radius:10px}.zoom-title{font-weight:bold;color:#fff;margin-right:5px}.zoom-value{min-width:58px;text-align:center;font-weight:bold;color:var(--yellow)}
 .table-wrap{position:relative;overflow:auto;border:1px solid var(--line);border-radius:10px;background:#fff;max-height:75vh;padding:0}#stage{position:relative;transform-origin:top left;width:900px}table{border-collapse:collapse;width:900px;table-layout:fixed;position:relative;z-index:1}th,td{border:1px solid #aab0b9;text-align:center;height:34px;padding:2px;color:#111;font-family:monospace;font-size:14px}th{height:42px;background:#e9edf2;font-family:Arial,sans-serif;font-weight:800;position:sticky;top:0;z-index:5}td{background:#fff;transition:.15s}td.hit{background:var(--yellow)!important;font-weight:900;box-shadow:inset 0 0 0 2px #d4a900}
 #svgLayer{position:absolute;left:0;top:0;width:900px;height:3442px;pointer-events:none;z-index:3;overflow:visible}.arrow-label{fill:var(--green);stroke:#fff;stroke-width:1}.arrow-text{fill:#fff;font-weight:bold;font-size:14px;text-anchor:middle;dominant-baseline:middle}
-#catRunner{position:absolute;z-index:10;display:none;pointer-events:none;transform:translate(-50%,-50%);font-size:34px;filter:drop-shadow(0 2px 2px #555);transition:none}.cat-number{position:absolute;right:-11px;bottom:-5px;background:var(--green);color:white;border:2px solid white;border-radius:7px;min-width:27px;height:27px;padding:2px 5px;text-align:center;font:bold 14px Arial;line-height:19px}
+#catRunner{position:absolute;z-index:10;display:none;pointer-events:none;transform:translate(-50%,-50%);font-size:34px;filter:drop-shadow(0 2px 2px #555);transition:none}
+#movingLayer{position:absolute;left:0;top:0;width:900px;height:3442px;z-index:9;pointer-events:none;display:none;overflow:visible}.movingUnit{position:absolute;left:0;top:0;width:0;height:0}.movingLine{position:absolute;height:6px;background:#ff2020;border-radius:4px;transform-origin:0 50%;box-shadow:0 0 2px #700}.movingHead{position:absolute;width:0;height:0;border-top:9px solid transparent;border-bottom:9px solid transparent;border-left:16px solid #ff2020;transform-origin:50% 50%}.movingNum{position:absolute;min-width:30px;height:24px;padding:2px 5px;border-radius:6px;background:#12a84b;color:#fff;border:2px solid #fff;text-align:center;font:bold 13px Arial;line-height:16px;transform:translate(-50%,-150%);white-space:nowrap}.cat-number{position:absolute;right:-11px;bottom:-5px;background:var(--green);color:white;border:2px solid white;border-radius:7px;min-width:27px;height:27px;padding:2px 5px;text-align:center;font:bold 14px Arial;line-height:19px}
 #status{text-align:center;color:#aab4c3;font-size:13px;margin-top:8px;min-height:18px}footer{text-align:center;color:#8090a5;padding:20px;font-size:13px}@media(max-width:600px){main{padding:9px}.panel{padding:11px}h1{font-size:25px}textarea{height:130px}.zoom-bar button,.cat-bar button{padding:9px 12px}}
 </style></head>
 <body>
@@ -26,7 +27,7 @@ button{border:0;border-radius:9px;padding:10px 17px;font-weight:bold;cursor:poin
 <div class="cat-bar"><span class="zoom-title">🐈 Cat Runner</span><button id="catToggle" class="cat-btn">🐈 CAT</button><button id="catRun" class="run-btn">▶ Run</button><button id="catStop" class="secondary">⏹ Stop</button><button id="speedDown" class="secondary">−</button><span class="speed" id="speedValue">1.0×</span><button id="speedUp" class="secondary">+</button></div>
 <div class="hint" style="text-align:center">🐈 CAT ကိုဖွင့်ပြီး Run နှိပ်ပါ။ ကြောင်လေးသည် Arrow 1 မှ စ၍ Arrow တစ်ခုချင်းစီအတိုင်း ပြေးပြီး 💚 နံပါတ်ကိုင်ပြောင်းသွားမည်။ + / − ဖြင့် အမြန်နှုန်းချိန်နိုင်သည်။</div>
 <div class="zoom-bar"><span class="zoom-title">🔍 Table Zoom</span><button id="zoomOut" class="secondary">−</button><button id="zoomFit">Fit Screen</button><button id="zoomIn" class="secondary">+</button><span class="zoom-value" id="zoomValue">100%</span></div>
-<div class="table-wrap" id="wrap"><div id="stage"><svg id="svgLayer"></svg><div id="catRunner">🐈<span class="cat-number" id="catNumber">1</span></div><table><thead><tr id="head"></tr></thead><tbody id="body"></tbody></table></div></div>
+<div class="table-wrap" id="wrap"><div id="stage"><svg id="svgLayer"></svg><div id="movingLayer"></div><div id="catRunner">🐈<span class="cat-number" id="catNumber">1</span></div><table><thead><tr id="head"></tr></thead><tbody id="body"></tbody></table></div></div>
 </section></main><footer>1000 Table • 000 → 999 • Cat Runner</footer>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script>
@@ -39,39 +40,44 @@ function parse(){return input.value.split(/\r?\n/).map(x=>x.trim()).filter(Boole
 function reset(){document.querySelectorAll('td.hit').forEach(x=>x.classList.remove('hit'));svg.innerHTML='';segments=[]}
 function center(td){const a=td.getBoundingClientRect(),s=stage.getBoundingClientRect();return{x:(a.left-s.left+a.width/2)/zoom,y:(a.top-s.top+a.height/2)/zoom}}
 function arrow(a,b,num){const ns='http://www.w3.org/2000/svg',line=document.createElementNS(ns,'line');line.setAttribute('x1',a.x);line.setAttribute('y1',a.y);line.setAttribute('x2',b.x);line.setAttribute('y2',b.y);line.setAttribute('stroke','#ff2020');line.setAttribute('stroke-width','3');line.setAttribute('marker-end','url(#arrowhead)');svg.appendChild(line);const mx=(a.x+b.x)/2,my=(a.y+b.y)/2,g=document.createElementNS(ns,'g'),rect=document.createElementNS(ns,'rect'),text=document.createElementNS(ns,'text');rect.setAttribute('x',mx-13);rect.setAttribute('y',my-13);rect.setAttribute('width','26');rect.setAttribute('height','26');rect.setAttribute('rx','6');rect.setAttribute('class','arrow-label');text.setAttribute('x',mx);text.setAttribute('y',my+1);text.setAttribute('class','arrow-text');text.textContent=num;g.append(rect,text);svg.appendChild(g);segments.push({a,b,num})}
-function draw(){reset();const list=parse(),valid=list.filter(x=>cells.has(x));count.textContent=list.length;found.textContent=valid.length;valid.forEach(x=>cells.get(x).classList.add('hit'));const defs=document.createElementNS('http://www.w3.org/2000/svg','defs');defs.innerHTML='<marker id="arrowhead" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#ff2020"/></marker>';svg.appendChild(defs);for(let i=0;i<valid.length-1;i++)arrow(center(cells.get(valid[i])),center(cells.get(valid[i+1])),i+1);if(moveOn){svg.style.display='none';cat.style.display='none';if(segments.length)startMovingArrows()}else{svg.style.display='block';if(catOn&&segments.length){cat.style.display='block';placeCat(segments[0].a,1)}else cat.style.display='none'}}
+function draw(){reset();const list=parse(),valid=list.filter(x=>cells.has(x));count.textContent=list.length;found.textContent=valid.length;valid.forEach(x=>cells.get(x).classList.add('hit'));const defs=document.createElementNS('http://www.w3.org/2000/svg','defs');defs.innerHTML='<marker id="arrowhead" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#ff2020"/></marker>';svg.appendChild(defs);for(let i=0;i<valid.length-1;i++)arrow(center(cells.get(valid[i])),center(cells.get(valid[i+1])),i+1);if(moveOn){svg.style.display='none';cat.style.display='none';movingLayer.style.display='block';if(segments.length)startMovingArrows()}else{moveToken++;movingLayer.innerHTML='';movingLayer.style.display='none';svg.style.display='block';if(catOn&&segments.length){cat.style.display='block';placeCat(segments[0].a,1)}else cat.style.display='none'}}
 function placeCat(p,n){cat.style.left=p.x+'px';cat.style.top=p.y+'px';catNumber.textContent=n}
 catToggle.onclick=()=>{if(moveOn)return;catOn=!catOn;catToggle.textContent=catOn?'🐈 CAT ON':'🐈 CAT';draw()};
 speedDown.onclick=()=>{speed=Math.max(.25,+(speed-.25).toFixed(2));speedValue.textContent=speed.toFixed(2)+'×'};speedUp.onclick=()=>{speed=Math.min(4,+(speed+.25).toFixed(2));speedValue.textContent=speed.toFixed(2)+'×'};
+const movingLayer=document.getElementById('movingLayer');
 function startMovingArrows(){
-if(!moveOn||segments.length<1||moveRunning)return;
-moveRunning=true;const token=++moveToken,ns='http://www.w3.org/2000/svg';
-svg.querySelectorAll('.moving-arrow').forEach(x=>x.remove());
-const items=[];
-for(let k=0;k<3;k++){
- const g=document.createElementNS(ns,'g');g.classList.add('moving-arrow');
- const line=document.createElementNS(ns,'line');line.setAttribute('stroke','#ff2020');line.setAttribute('stroke-width','5');line.setAttribute('marker-end','url(#arrowhead)');
- const box=document.createElementNS(ns,'rect');box.setAttribute('width','32');box.setAttribute('height','24');box.setAttribute('rx','6');box.setAttribute('fill','#12a84b');box.setAttribute('stroke','#fff');
- const txt=document.createElementNS(ns,'text');txt.setAttribute('fill','#fff');txt.setAttribute('font-size','14');txt.setAttribute('font-weight','bold');txt.setAttribute('text-anchor','middle');txt.setAttribute('dominant-baseline','middle');
- g.append(line,box,txt);svg.appendChild(g);items.push({g,line,box,txt});
-}
-let idx=[0,1,2].map((x,i)=>i%segments.length),progress=[0,0,0],last=performance.now();
-function frame(now){
- if(!moveOn||token!==moveToken){items.forEach(x=>x.g.remove());moveRunning=false;return}
- const dt=Math.min(60,now-last);last=now;
+ if(!moveOn||segments.length<1)return;
+ moveToken++;const token=moveToken;moveRunning=true;movingLayer.innerHTML='';movingLayer.style.display='block';svg.style.display='none';
+ const units=[];
  for(let k=0;k<3;k++){
-  const s=segments[idx[k]%segments.length],len=Math.hypot(s.b.x-s.a.x,s.b.y-s.a.y)||1;
-  progress[k]+=dt*(0.00032*moveSpeed);
-  if(progress[k]>=1){progress[k]=0;idx[k]=(idx[k]+1)%segments.length}
-  const p=progress[k],x=s.a.x+(s.b.x-s.a.x)*p,y=s.a.y+(s.b.y-s.a.y)*p;
-  const it=items[k];it.line.setAttribute('x1',s.a.x);it.line.setAttribute('y1',s.a.y);it.line.setAttribute('x2',x);it.line.setAttribute('y2',y);
-  it.box.setAttribute('x',x-16);it.box.setAttribute('y',y-40);it.txt.setAttribute('x',x);it.txt.setAttribute('y',y-28);it.txt.textContent=s.num;
+  const u=document.createElement('div');u.className='movingUnit';
+  const line=document.createElement('div');line.className='movingLine';
+  const head=document.createElement('div');head.className='movingHead';
+  const num=document.createElement('div');num.className='movingNum';
+  u.append(line,head,num);movingLayer.appendChild(u);units.push({u,line,head,num});
  }
- last=now;requestAnimationFrame(frame)
-}
-requestAnimationFrame(frame);
+ const path=segments.slice(), count=path.length;
+ const state=[0,Math.floor(count/3)%count,Math.floor(count*2/3)%count].map(i=>({i,p:0}));
+ let last=performance.now();
+ function frame(now){
+  if(!moveOn||token!==moveToken){movingLayer.innerHTML='';movingLayer.style.display='none';moveRunning=false;return}
+  const dt=Math.min(50,now-last);last=now;
+  state.forEach((st,k)=>{
+   const s=path[st.i%count],a=s.a,b=s.b;
+   const dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy)||1;
+   st.p+=dt*0.00045*moveSpeed;
+   if(st.p>=1){st.p=0;st.i=(st.i+1)%count}
+   const x=a.x+dx*st.p,y=a.y+dy*st.p,angle=Math.atan2(dy,dx)*180/Math.PI;
+   const it=units[k];
+   it.line.style.width=Math.max(35,Math.min(95,len*.22))+'px';it.line.style.left=(x-Math.cos(Math.atan2(dy,dx))*40)+'px';it.line.style.top=(y-Math.sin(Math.atan2(dy,dx))*40)+'px';it.line.style.transform='rotate('+angle+'deg)';
+   it.head.style.left=x+'px';it.head.style.top=y+'px';it.head.style.transform='translate(-50%,-50%) rotate('+angle+'deg)';
+   it.num.style.left=x+'px';it.num.style.top=y+'px';it.num.textContent=s.num;
+  });
+  requestAnimationFrame(frame);
+ }
+ requestAnimationFrame(frame);
 }moveToggle.onclick=()=>{moveOn=!moveOn;moveToggle.textContent=moveOn?'🔴 MOVE ON':'🔴 MOVE OFF';if(moveOn){stopRequested=true;runToken++;running=false;cat.style.display='none';svg.style.display='block';draw();setTimeout(()=>startMovingArrows(),50)}else{moveToken++;moveRunning=false;svg.querySelectorAll('.moving-arrow').forEach(x=>x.remove());draw()}};
-moveStop.onclick=()=>{moveToken++;moveRunning=false;moveOn=false;moveToggle.textContent='🔴 MOVE OFF';svg.querySelectorAll('.moving-arrow').forEach(x=>x.remove());draw();status.textContent='⏹ Moving Arrows stopped.'};
+moveStop.onclick=()=>{moveToken++;moveRunning=false;moveOn=false;moveToggle.textContent='🔴 MOVE OFF';movingLayer.innerHTML='';movingLayer.style.display='none';draw();status.textContent='⏹ Moving Arrows stopped.'};
 accDown.onclick=()=>{moveSpeed=Math.max(.25,+(moveSpeed-.25).toFixed(2));accValue.textContent=moveSpeed.toFixed(2)+'×'};
 accUp.onclick=()=>{moveSpeed=Math.min(6,+(moveSpeed+.25).toFixed(2));accValue.textContent=moveSpeed.toFixed(2)+'×'};
 function runCat(){if(!segments.length){status.textContent='Arrow များဖန်တီးရန် Number အနည်းဆုံး 2 ခု Paste ချပါ။';return}if(running)return;catOn=true;stopRequested=false;running=true;const token=++runToken;catToggle.textContent='🐈 CAT ON';cat.style.display='block';status.textContent='🐈 Cat Runner looping... Stop ကိုနှိပ်မှ ရပ်မည်။';let i=0;function next(){if(stopRequested||token!==runToken){running=false;status.textContent='⏹ Cat Runner stopped.';return}if(i>=segments.length)i=0;const s=segments[i];catNumber.textContent=s.num;const dx=s.b.x-s.a.x,dy=s.b.y-s.a.y,len=Math.hypot(dx,dy),duration=Math.max(350,len*8/speed),start=performance.now();function frame(t){if(stopRequested||token!==runToken){running=false;status.textContent='⏹ Cat Runner stopped.';return}const p=Math.min(1,(t-start)/duration);cat.style.left=(s.a.x+dx*p)+'px';cat.style.top=(s.a.y+dy*p)+'px';if(p<1)requestAnimationFrame(frame);else{i++;setTimeout(next,120/speed)}}requestAnimationFrame(frame)}next()}
