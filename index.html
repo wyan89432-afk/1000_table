@@ -43,8 +43,38 @@ function draw(){reset();const list=parse(),valid=list.filter(x=>cells.has(x));co
 function placeCat(p,n){cat.style.left=p.x+'px';cat.style.top=p.y+'px';catNumber.textContent=n}
 catToggle.onclick=()=>{if(moveOn)return;catOn=!catOn;catToggle.textContent=catOn?'🐈 CAT ON':'🐈 CAT';draw()};
 speedDown.onclick=()=>{speed=Math.max(.25,+(speed-.25).toFixed(2));speedValue.textContent=speed.toFixed(2)+'×'};speedUp.onclick=()=>{speed=Math.min(4,+(speed+.25).toFixed(2));speedValue.textContent=speed.toFixed(2)+'×'};
-function startMovingArrows(){if(!moveOn||!segments.length)return;if(moveRunning)return;moveRunning=true;const token=++moveToken;const layer=svg,ns='http://www.w3.org/2000/svg';layer.querySelectorAll('.moving-arrow').forEach(x=>x.remove());const items=[];for(let k=0;k<3;k++){const g=document.createElementNS(ns,'g');g.setAttribute('class','moving-arrow');const line=document.createElementNS(ns,'line');line.setAttribute('stroke','#ff2020');line.setAttribute('stroke-width','4');line.setAttribute('marker-end','url(#arrowhead)');const text=document.createElementNS(ns,'text');text.setAttribute('fill','#111');text.setAttribute('font-size','14');text.setAttribute('font-weight','bold');text.setAttribute('text-anchor','middle');text.setAttribute('paint-order','stroke');text.setAttribute('stroke','#fff');text.setAttribute('stroke-width','4');g.append(line,text);layer.appendChild(g);items.push({g,line,text,offset:k/3})}
-let start=performance.now();function frame(now){if(!moveOn||token!==moveToken){items.forEach(x=>x.g.remove());moveRunning=false;return}const cycle=segments.length;for(let k=0;k<items.length;k++){const it=items[k],u=((now-start)/Math.max(1400,2200/moveSpeed)+it.offset)%cycle,idx=Math.floor(u),p=u-idx,s=segments[idx],dx=s.b.x-s.a.x,dy=s.b.y-s.a.y;it.line.setAttribute('x1',s.a.x);it.line.setAttribute('y1',s.a.y);it.line.setAttribute('x2',s.a.x+dx*p);it.line.setAttribute('y2',s.a.y+dy*p);it.text.setAttribute('x',s.a.x+dx*p);it.text.setAttribute('y',s.a.y+dy*p-12);it.text.textContent=s.num}requestAnimationFrame(frame)}requestAnimationFrame(frame)}
+function startMovingArrows(){
+if(!moveOn||!segments.length||moveRunning)return;
+moveRunning=true;const token=++moveToken,layer=svg,ns='http://www.w3.org/2000/svg';
+layer.querySelectorAll('.moving-arrow').forEach(x=>x.remove());
+const items=[];
+for(let k=0;k<3;k++){
+ const g=document.createElementNS(ns,'g');g.setAttribute('class','moving-arrow');
+ const line=document.createElementNS(ns,'line');line.setAttribute('stroke','#ff2020');line.setAttribute('stroke-width','4');line.setAttribute('marker-end','url(#arrowhead)');
+ const text=document.createElementNS(ns,'text');text.setAttribute('fill','#111');text.setAttribute('font-size','14');text.setAttribute('font-weight','bold');text.setAttribute('text-anchor','middle');text.setAttribute('paint-order','stroke');text.setAttribute('stroke','#fff');text.setAttribute('stroke-width','4');
+ const box=document.createElementNS(ns,'rect');box.setAttribute('width','30');box.setAttribute('height','22');box.setAttribute('rx','5');box.setAttribute('fill','#12a84b');box.setAttribute('stroke','#fff');box.setAttribute('stroke-width','1');
+ g.append(line,box,text);layer.appendChild(g);items.push({g,line,box,text,offset:k/3});
+}
+const targets=parse().filter(x=>cells.has(x));
+if(targets.length<2){moveRunning=false;return}
+const pts=targets.map(x=>center(cells.get(x)));
+let startTime=performance.now();
+function frame(now){
+ if(!moveOn||token!==moveToken){items.forEach(x=>x.g.remove());moveRunning=false;return}
+ const segCount=pts.length-1;
+ const cycleMs=Math.max(1600,2600/moveSpeed);
+ for(let k=0;k<3;k++){
+  const it=items[k],u=((now-startTime)/cycleMs+it.offset)%pts.length;
+  const idx=Math.floor(u)%pts.length,p=u-idx;
+  const a=pts[idx],b=pts[(idx+1)%pts.length],dx=b.x-a.x,dy=b.y-a.y;
+  const x=a.x+dx*p,y=a.y+dy*p;
+  it.line.setAttribute('x1',a.x);it.line.setAttribute('y1',a.y);it.line.setAttribute('x2',x);it.line.setAttribute('y2',y);
+  it.box.setAttribute('x',x-15);it.box.setAttribute('y',y-39);it.text.setAttribute('x',x);it.text.setAttribute('y',y-23);it.text.textContent=targets[(idx+1)%targets.length];
+ }
+ requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+}
 moveToggle.onclick=()=>{moveOn=!moveOn;moveToggle.textContent=moveOn?'🔴 MOVE ON':'🔴 MOVE OFF';if(moveOn){stopRequested=true;runToken++;running=false;cat.style.display='none';svg.style.display='block';draw()}else{moveToken++;moveRunning=false;svg.querySelectorAll('.moving-arrow').forEach(x=>x.remove());draw()}};
 moveStop.onclick=()=>{moveToken++;moveRunning=false;moveOn=false;moveToggle.textContent='🔴 MOVE OFF';svg.querySelectorAll('.moving-arrow').forEach(x=>x.remove());draw();status.textContent='⏹ Moving Arrows stopped.'};
 accDown.onclick=()=>{moveSpeed=Math.max(.25,+(moveSpeed-.25).toFixed(2));accValue.textContent=moveSpeed.toFixed(2)+'×'};
@@ -52,6 +82,6 @@ accUp.onclick=()=>{moveSpeed=Math.min(6,+(moveSpeed+.25).toFixed(2));accValue.te
 function runCat(){if(!segments.length){status.textContent='Arrow များဖန်တီးရန် Number အနည်းဆုံး 2 ခု Paste ချပါ။';return}if(running)return;catOn=true;stopRequested=false;running=true;const token=++runToken;catToggle.textContent='🐈 CAT ON';cat.style.display='block';status.textContent='🐈 Cat Runner looping... Stop ကိုနှိပ်မှ ရပ်မည်။';let i=0;function next(){if(stopRequested||token!==runToken){running=false;status.textContent='⏹ Cat Runner stopped.';return}if(i>=segments.length)i=0;const s=segments[i];catNumber.textContent=s.num;const dx=s.b.x-s.a.x,dy=s.b.y-s.a.y,len=Math.hypot(dx,dy),duration=Math.max(350,len*8/speed),start=performance.now();function frame(t){if(stopRequested||token!==runToken){running=false;status.textContent='⏹ Cat Runner stopped.';return}const p=Math.min(1,(t-start)/duration);cat.style.left=(s.a.x+dx*p)+'px';cat.style.top=(s.a.y+dy*p)+'px';if(p<1)requestAnimationFrame(frame);else{i++;setTimeout(next,120/speed)}}requestAnimationFrame(frame)}next()}
 catRun.onclick=runCat;
 catStop.onclick=()=>{stopRequested=true;runToken++;running=false;status.textContent='⏹ Cat Runner stopped.';};
-download.onclick=async()=>{if(!html2canvas){status.textContent='Loading download library...';return}status.textContent='⏳ PNG ပြုလုပ်နေပါသည်...';const old=stage.style.transform;stage.style.transform='none';try{await new Promise(r=>setTimeout(r,100));const canvas=await html2canvas(stage,{backgroundColor:'#101827',scale:1,useCORS:true,width:900,height:3442,onclone:(doc)=>{const st=doc.getElementById('stage');st.style.background='#101827';st.style.padding='18px';st.style.width='936px';st.style.boxSizing='border-box';const t=doc.getElementById('table');t.style.background='#fff';t.style.margin='0';}});stage.style.transform=old;const a=document.createElement('a');a.download='1000-table.png';a.href=canvas.toDataURL('image/png');a.click();status.textContent='✅ PNG Download started!'}catch(e){stage.style.transform=old;status.textContent='❌ Download error'}}
+download.onclick=async()=>{if(typeof html2canvas!=='function'){status.textContent='❌ Download library မတက်သေးပါ။ Internet ပြန်စစ်ပြီး Retry လုပ်ပါ။';return}status.textContent='⏳ PNG ပြုလုပ်နေပါသည်...';const old=stage.style.transform;stage.style.transform='none';try{await new Promise(r=>setTimeout(r,150));const canvas=await html2canvas(stage,{backgroundColor:'#101827',scale:1,useCORS:true,allowTaint:true,width:900,height:3442,windowWidth:900,windowHeight:3442,logging:false,onclone:(doc)=>{const st=doc.getElementById('stage');if(st){st.style.background='#101827';st.style.transform='none';st.style.width='900px';st.style.padding='0';}const t=doc.querySelector('table');if(t){t.style.background='#fff';t.style.margin='0';}}});stage.style.transform=old;canvas.toBlob(blob=>{if(!blob){status.textContent='❌ PNG ပြုလုပ်မရပါ။';return}const a=document.createElement('a');a.download='1000-table.png';a.href=URL.createObjectURL(blob);document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);status.textContent='✅ PNG Download started!'},'image/png');}catch(e){stage.style.transform=old;status.textContent='❌ Download error: '+(e&&e.message?e.message:'unknown error')}}
 apply.onclick=draw;clear.onclick=()=>{input.value='';draw()};input.addEventListener('input',draw);setTimeout(()=>setZoom(Math.min(1,wrap.clientWidth/900)),50);
 </script></body></html>
