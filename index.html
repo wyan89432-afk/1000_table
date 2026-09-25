@@ -34,7 +34,7 @@ button{border:0;border-radius:9px;padding:10px 17px;font-weight:bold;cursor:poin
 const head=document.getElementById('head'),body=document.getElementById('body'),input=document.getElementById('numbers'),wrap=document.getElementById('wrap'),stage=document.getElementById('stage'),svg=document.getElementById('svgLayer'),cat=document.getElementById('catRunner'),catNumber=document.getElementById('catNumber'),cells=new Map(),status=document.getElementById('status');let zoom=1,catOn=false,speed=1,segments=[],running=false,stopRequested=false,runToken=0,moveOn=false,moveSpeed=1,moveRunning=false,moveToken=0;
 for(let c=0;c<10;c++){const th=document.createElement('th');th.textContent='for '+c;head.appendChild(th)}
 for(let r=0;r<100;r++){const tr=document.createElement('tr');for(let c=0;c<10;c++){const n=c*100+r,td=document.createElement('td'),v=String(n).padStart(3,'0');td.textContent=v;tr.appendChild(td);cells.set(v,td)}body.appendChild(tr)}
-const analystStage=document.getElementById('analystStage'),analystSvg=document.getElementById('analystSvg');
+const analystStage=document.getElementById('analystStage');let analystSvg=document.getElementById('analystSvg');
 const analystColors=['#c7a900','#20e04b','#ff3030','#248cff','#8b5a2b','#7a35d8'];
 function analystEsc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 function analystBuild(){
