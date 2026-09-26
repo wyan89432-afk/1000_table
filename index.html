@@ -74,15 +74,22 @@ function analystBuild(){
  ];
  requestAnimationFrame(()=>{
   list.forEach((n,i)=>{
-   const color=analystColors[i%6], vals=[String(n),...calc.map(f=>String(f(n)))];
-   for(let j=0;j<vals.length-1;j++){
-    const from=point(j===0?1:j+1, j===0?i:Number(vals[j]), 'right');
-    const to=point(j+1, Number(vals[j+1]), 'left');
+   const color=analystColors[i%6];
+   const vals=[String(n),...calc.map(f=>String(f(n)))];
+   // colour → number → hundred → ten → unit → BK → H+ten → H+unit → unit+ten
+   for(let j=0;j<vals.length;j++){
+    const from=point(j===0?0:j+1, j===0?i:Number(vals[j-1]), 'right');
+    const to=point(j+1, Number(vals[j]), 'left');
     const line=document.createElementNS(ns,'line');
-    line.setAttribute('x1',from.x);line.setAttribute('y1',from.y);line.setAttribute('x2',to.x);line.setAttribute('y2',to.y);
-    line.setAttribute('stroke',color);line.setAttribute('stroke-width','4');line.setAttribute('class','analyst-line');
+    line.setAttribute('x1',from.x);line.setAttribute('y1',from.y);
+    line.setAttribute('x2',to.x);line.setAttribute('y2',to.y);
+    line.setAttribute('stroke',color);line.setAttribute('stroke-width','4');
+    line.setAttribute('class','analyst-line');
     analystSvg.appendChild(line);
-    const dot=document.createElementNS(ns,'circle');dot.setAttribute('cx',to.x);dot.setAttribute('cy',to.y);dot.setAttribute('r','4');dot.setAttribute('fill',color);analystSvg.appendChild(dot);
+    const dot=document.createElementNS(ns,'circle');
+    dot.setAttribute('cx',to.x);dot.setAttribute('cy',to.y);
+    dot.setAttribute('r','4');dot.setAttribute('fill',color);
+    analystSvg.appendChild(dot);
    }
   });
  });
