@@ -20,7 +20,7 @@ button{border:0;border-radius:9px;padding:10px 17px;font-weight:bold;cursor:poin
 <main>
 <section class="panel"><label for="numbers">Search / Paste Numbers (1 Column • Unlimited Rows)</label><textarea id="numbers" placeholder="015&#10;127&#10;342&#10;908"></textarea>
 <div class="buttons"><button id="apply">Search & Draw</button><button id="clear" class="secondary">Clear</button><button id="download" class="download-btn">⬇ Download PNG</button></div><div class="hint">Paste လုပ်ထားသော Number များကို 🟡 Highlight၊ 🔴 Arrow ဖြင့် Join လုပ်ပေးမည်။</div><div id="status"></div></section>
-<section class="panel stats"><div class="stat">Total: <b>1000</b></div><div class="stat">Pasted Rows: <b id="count">0</b></div><div class="stat">Found: <b id="found">0</b></div></section><section class="panel"><h2 class="analyst-title">ANALYST TABLE</h2><div class="analyst-wrap"><div id="analystStage" class="analyst-stage"><svg id="analystSvg" class="analyst-svg"></svg></div></div><div class="analyst-note">Paste/Search Number များအလိုက် 6 colours loop ဖြင့် digit နှင့် calculation result များကို colour arrow ဖြင့် ချိတ်ဆက်ပြမည်။</div></section>
+<section class="panel stats"><div class="stat">Total: <b>1000</b></div><div class="stat">Pasted Rows: <b id="count">0</b></div><div class="stat">Found: <b id="found">0</b></div></section><section class="panel"><h2 class="analyst-title">ANALYST TABLE</h2><div class="analyst-wrap"><div id="analystStage" class="analyst-stage"><svg id="analystSvg" class="analyst-svg"></svg></div></div><div class="analyst-note">သက်ဆိုင်ရာ number ကို column တစ်ခုမှ နောက် column ၏ သက်ဆိုင်ရာ number ဆီ အဆင့်လိုက် colour line ဖြင့် ဆက်ပြထားသည်။</div></section>
 <section class="panel">
 <div class="cat-bar"><span class="zoom-title">🔴 Moving Arrows</span><button id="moveToggle" class="cat-btn">🔴 MOVE OFF</button><button id="moveStop" class="secondary">⏹ Stop</button><button id="accDown" class="secondary">−</button><span class="speed" id="accValue">1.0×</span><button id="accUp" class="secondary">+</button></div>
 <div class="hint" style="text-align:center">🔴 MOVE ကိုဖွင့်ပါက မူလ Arrow/Cat များပျောက်ပြီး Red Arrow ၃ ခု ရွေ့လျားမည်။ − / + ဖြင့် acceleration အမြန်နှုန်းချိန်နိုင်သည်။</div>
@@ -36,54 +36,34 @@ for(let c=0;c<10;c++){const th=document.createElement('th');th.textContent='for 
 for(let r=0;r<100;r++){const tr=document.createElement('tr');for(let c=0;c<10;c++){const n=c*100+r,td=document.createElement('td'),v=String(n).padStart(3,'0');td.textContent=v;tr.appendChild(td);cells.set(v,td)}body.appendChild(tr)}
 const analystStage=document.getElementById('analystStage');let analystSvg=document.getElementById('analystSvg');
 const analystColors=['#c7a900','#20e04b','#ff3030','#248cff','#8b5a2b','#7a35d8'];
-function analystEsc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 function analystBuild(){
- const list=parse(),rows=Math.max(10,list.length),cols=[
-  ['No',list.map((x,i)=>String(i+1))],
-  ['number',list],
-  ['colour',list.map((x,i)=>i%6)],
-  ['hundred digit',Array.from({length:10},(_,i)=>String(i))],
-  ['ten digit',Array.from({length:10},(_,i)=>String(i))],
-  ['unit digit',Array.from({length:10},(_,i)=>String(i))],
-  ['BK(brake)',Array.from({length:10},(_,i)=>String(i))],
-  ['(Hundred + ten) digit',Array.from({length:10},(_,i)=>String(i))],
-  ['(Hundred + unit) digit',Array.from({length:10},(_,i)=>String(i))],
-  ['(unit + ten) digit',Array.from({length:10},(_,i)=>String(i))]
- ];
+ const list=parse(),rows=Math.max(10,list.length);
+ const headers=['colour','number','hundred digit','ten digit','unit digit','BK(brake)','(Hundred +ten) digit','(Hundred +unit) digit','(unit+ten) digit'];
  analystStage.innerHTML='<svg id="analystSvg" class="analyst-svg"></svg>';
  analystSvg=document.getElementById('analystSvg');
- cols.forEach((col,ci)=>{
-  const c=document.createElement('div');c.className='analyst-col';
-  const head=document.createElement('div');head.className='analyst-head';head.textContent=col[0];c.appendChild(head);
-  const body=document.createElement('div');body.className='analyst-body';
-  const vals=col[1];
-  if(ci<3){
-   for(let i=0;i<rows;i++){
-    const d=document.createElement('div');d.className='analyst-item '+(ci===1?'analyst-num':ci===2?'analyst-colour-cell':'');
-    if(i<list.length){
-     const n=list[i], color=analystColors[i%6];
-     if(ci===0)d.textContent=String(i+1);
-     if(ci===1){d.textContent=n;d.style.background=color;d.style.color='#fff';}
-     if(ci===2){d.textContent='●';d.style.color=color;}
-    }
-    body.appendChild(d);
-   }
-  }else{
-   for(let i=0;i<10;i++){const d=document.createElement('div');d.className='analyst-item analyst-digit';d.textContent=String(i);body.appendChild(d)}
+ headers.forEach((h,ci)=>{
+  const col=document.createElement('div');col.className='analyst-col';
+  const hd=document.createElement('div');hd.className='analyst-head';hd.textContent=h;col.appendChild(hd);
+  const bd=document.createElement('div');bd.className='analyst-body';
+  const total=ci<2?rows:10;
+  for(let i=0;i<total;i++){
+   const d=document.createElement('div');d.className='analyst-item';
+   if(ci===0 && i<list.length){d.classList.add('analyst-colour-cell');d.textContent='●';d.style.color=analystColors[i%6]}
+   else if(ci===1 && i<list.length){d.classList.add('analyst-num');d.textContent=list[i];d.style.background=analystColors[i%6];d.style.color='#fff'}
+   else if(ci>=2)d.textContent=String(i);
+   bd.appendChild(d);
   }
-  c.appendChild(body);analystStage.appendChild(c);
+  col.appendChild(bd);analystStage.appendChild(col);
  });
- const svg=document.getElementById('analystSvg');svg.style.height=(78+rows*48)+'px';svg.style.width='100%';
- const ns='http://www.w3.org/2000/svg',defs=document.createElementNS(ns,'defs');
- defs.innerHTML='<marker id="analystArrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="context-stroke"/></marker>';svg.appendChild(defs);
- const colEls=[...analystStage.querySelectorAll('.analyst-col')];
+ analystSvg.style.height=(78+rows*48)+'px';
+ const ns='http://www.w3.org/2000/svg';
+ const cols=[...analystStage.querySelectorAll('.analyst-col')];
  function point(ci,ri,side){
-  const col=colEls[ci], body=col.querySelector('.analyst-body');
-  const row=Math.min(Math.max(0,ri),body.children.length-1), cell=body.children[row];
-  const sr=analystStage.getBoundingClientRect(), cr=cell.getBoundingClientRect();
+  const body=cols[ci].querySelector('.analyst-body'),cell=body.children[Math.max(0,Math.min(ri,body.children.length-1))];
+  const sr=analystStage.getBoundingClientRect(),cr=cell.getBoundingClientRect();
   return {x:(side==='right'?cr.right:cr.left)-sr.left,y:cr.top-sr.top+cr.height/2};
  }
- const formulas=[
+ const calc=[
   n=>Math.floor(+n/100),
   n=>Math.floor(+n/10)%10,
   n=>+n%10,
@@ -92,26 +72,20 @@ function analystBuild(){
   n=>(Math.floor(+n/100)+(+n%10))%10,
   n=>(Math.floor(+n/10)%10+(+n%10))%10
  ];
- list.forEach((n,i)=>{
-  const color=analystColors[i%6];
-  const values=[String(n),...formulas.map(fn=>String(fn(n)))];
-  for(let j=0;j<values.length-1;j++){
-   const fromCol=j+1,toCol=j+2;
-   const fromRow=fromCol===1?i:Number(values[j]);
-   const toRow=Number(values[j+1]);
-   const a=point(fromCol-1,fromRow,'right'),b=point(toCol-1,toRow,'left');
-   const line=document.createElementNS(ns,'line');
-   line.setAttribute('x1',a.x);line.setAttribute('y1',a.y);
-   line.setAttribute('x2',b.x);line.setAttribute('y2',b.y);
-   line.setAttribute('stroke',color);line.setAttribute('stroke-width','4');
-   line.setAttribute('class','analyst-line');
-   svg.appendChild(line);
-   const dot=document.createElementNS(ns,'circle');
-   dot.setAttribute('cx',b.x);dot.setAttribute('cy',b.y);dot.setAttribute('r','3.5');
-   dot.setAttribute('fill',color);dot.setAttribute('class','analyst-dot');
-   svg.appendChild(dot);
-  }
- });;
+ requestAnimationFrame(()=>{
+  list.forEach((n,i)=>{
+   const color=analystColors[i%6], vals=[String(n),...calc.map(f=>String(f(n)))];
+   for(let j=0;j<vals.length-1;j++){
+    const from=point(j===0?1:j+1, j===0?i:Number(vals[j]), 'right');
+    const to=point(j+1, Number(vals[j+1]), 'left');
+    const line=document.createElementNS(ns,'line');
+    line.setAttribute('x1',from.x);line.setAttribute('y1',from.y);line.setAttribute('x2',to.x);line.setAttribute('y2',to.y);
+    line.setAttribute('stroke',color);line.setAttribute('stroke-width','4');line.setAttribute('class','analyst-line');
+    analystSvg.appendChild(line);
+    const dot=document.createElementNS(ns,'circle');dot.setAttribute('cx',to.x);dot.setAttribute('cy',to.y);dot.setAttribute('r','4');dot.setAttribute('fill',color);analystSvg.appendChild(dot);
+   }
+  });
+ });
 }
 function setZoom(z){zoom=Math.max(.25,Math.min(1.5,z));stage.style.transform='scale('+zoom+')';wrap.style.minHeight=Math.min(innerHeight*.75,3442*zoom)+'px';document.getElementById('zoomValue').textContent=Math.round(zoom*100)+'%';draw()}
 zoomIn.onclick=()=>setZoom(zoom+.1);zoomOut.onclick=()=>setZoom(zoom-.1);zoomFit.onclick=()=>setZoom(Math.min(1,wrap.clientWidth/900));
