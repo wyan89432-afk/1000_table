@@ -14,7 +14,7 @@ button{border:0;border-radius:9px;padding:10px 17px;font-weight:bold;cursor:poin
 #catRunner{position:absolute;z-index:10;display:none;pointer-events:none;transform:translate(-50%,-50%);font-size:34px;filter:drop-shadow(0 2px 2px #555);transition:none}
 #movingLayer{position:absolute;left:0;top:0;width:900px;height:3442px;z-index:9;pointer-events:none;display:none;overflow:visible}.movingUnit{position:absolute;left:0;top:0;width:0;height:0}.movingLine{position:absolute;height:6px;background:#ff2020;border-radius:4px;transform-origin:0 50%;box-shadow:0 0 2px #700}.movingHead{position:absolute;width:0;height:0;border-top:9px solid transparent;border-bottom:9px solid transparent;border-left:16px solid #ff2020;transform-origin:50% 50%}.movingNum{position:absolute;min-width:30px;height:24px;padding:2px 5px;border-radius:6px;background:#12a84b;color:#fff;border:2px solid #fff;text-align:center;font:bold 13px Arial;line-height:16px;transform:translate(-50%,-150%);white-space:nowrap}.cat-number{position:absolute;right:-11px;bottom:-5px;background:var(--green);color:white;border:2px solid white;border-radius:7px;min-width:27px;height:27px;padding:2px 5px;text-align:center;font:bold 14px Arial;line-height:19px}
 #status{text-align:center;color:#aab4c3;font-size:13px;margin-top:8px;min-height:18px}footer{text-align:center;color:#8090a5;padding:20px;font-size:13px}@media(max-width:600px){main{padding:9px}.panel{padding:11px}h1{font-size:25px}textarea{height:130px}.zoom-bar button,.cat-bar button{padding:9px 12px}}
-.analyst-wrap{position:relative;overflow:auto;background:#050505;border:2px solid #fff;border-radius:10px}.analyst-stage{position:relative;display:grid;grid-template-columns:100px 120px 105px repeat(7,1fr);min-width:1120px;background:#050505}.analyst-col{position:relative;border-right:2px solid #fff}.analyst-head{height:78px;background:#111;color:#fff;border-bottom:2px solid #fff;font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;text-align:center;padding:4px}.analyst-body{position:relative}.analyst-item{height:48px;border-bottom:1px solid #444;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-family:monospace;position:relative;z-index:2}.analyst-num{font-size:22px;font-weight:900}.analyst-colour{font-size:28px}.analyst-digit{font-size:20px}.analyst-svg{position:absolute;left:0;top:0;width:100%;height:100%;z-index:4;pointer-events:none;overflow:visible}.analyst-line{fill:none;stroke-width:3;opacity:.95}.analyst-dot{stroke:#fff;stroke-width:1}.analyst-title{margin:0 0 10px;text-align:center;color:#fff}.analyst-note{font-size:13px;color:#aab4c3;text-align:center;margin:8px 0 0}.analyst-stage{--rowh:48px}.analyst-number-cell{border:1px solid #fff}.analyst-colour-cell{font-size:24px}</style></head>
+.analyst-wrap{position:relative;overflow:auto;background:#050505;border:2px solid #fff;border-radius:10px}.analyst-stage{position:relative;display:grid;grid-template-columns:100px 120px 105px repeat(7,1fr);min-width:1120px;background:#050505}.analyst-col{position:relative;border-right:2px solid #fff}.analyst-head{height:78px;background:#111;color:#fff;border-bottom:2px solid #fff;font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;text-align:center;padding:4px}.analyst-body{position:relative}.analyst-item{height:48px;border-bottom:1px solid #444;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-family:monospace;position:relative;z-index:2}.analyst-num{font-size:22px;font-weight:900}.analyst-colour{font-size:28px}.analyst-digit{font-size:20px}.analyst-svg{position:absolute;left:0;top:0;width:100%;height:100%;z-index:50;pointer-events:none;overflow:visible;display:block}.analyst-col{position:relative;z-index:1}.analyst-line{fill:none;stroke-width:4;opacity:1;vector-effect:non-scaling-stroke}.analyst-dot{stroke:#fff;stroke-width:1}.analyst-title{margin:0 0 10px;text-align:center;color:#fff}.analyst-note{font-size:13px;color:#aab4c3;text-align:center;margin:8px 0 0}.analyst-stage{--rowh:48px}.analyst-number-cell{border:1px solid #fff}.analyst-colour-cell{font-size:24px}</style></head>
 <body>
 <header><h1>1000 TABLE 🐈</h1><div class="sub">000 မှ 999 အထိ • Paste • Connect • Cat Runner</div></header>
 <main>
@@ -79,9 +79,9 @@ function analystBuild(){
  const colEls=[...analystStage.querySelectorAll('.analyst-col')];
  function point(ci,ri,side){
   const col=colEls[ci], body=col.querySelector('.analyst-body');
-  const row=Math.min(ri,body.children.length-1), y=78+row*48+24;
-  const x=side==='right' ? col.offsetLeft+col.offsetWidth : col.offsetLeft;
-  return {x,y};
+  const row=Math.min(Math.max(0,ri),body.children.length-1), cell=body.children[row];
+  const sr=analystStage.getBoundingClientRect(), cr=cell.getBoundingClientRect();
+  return {x:(side==='right'?cr.right:cr.left)-sr.left,y:cr.top-sr.top+cr.height/2};
  }
  const formulas=[
   n=>Math.floor(+n/100),
@@ -103,7 +103,7 @@ function analystBuild(){
    const line=document.createElementNS(ns,'line');
    line.setAttribute('x1',a.x);line.setAttribute('y1',a.y);
    line.setAttribute('x2',b.x);line.setAttribute('y2',b.y);
-   line.setAttribute('stroke',color);line.setAttribute('stroke-width','3');
+   line.setAttribute('stroke',color);line.setAttribute('stroke-width','4');
    line.setAttribute('class','analyst-line');
    svg.appendChild(line);
    const dot=document.createElementNS(ns,'circle');
