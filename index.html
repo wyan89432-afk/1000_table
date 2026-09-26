@@ -45,12 +45,15 @@ function analystBuild(){
   const col=document.createElement('div');col.className='analyst-col';
   const hd=document.createElement('div');hd.className='analyst-head';hd.textContent=h;col.appendChild(hd);
   const bd=document.createElement('div');bd.className='analyst-body';
+  // colour/number columns grow with pasted rows; all calculated columns always contain 0-9.
   const total=ci<2?rows:10;
   for(let i=0;i<total;i++){
    const d=document.createElement('div');d.className='analyst-item';
-   if(ci===0 && i<list.length){d.classList.add('analyst-colour-cell');d.textContent='●';d.style.color=analystColors[i%6]}
-   else if(ci===1 && i<list.length){d.classList.add('analyst-num');d.textContent=list[i];d.style.background=analystColors[i%6];d.style.color='#fff'}
-   else if(ci>=2)d.textContent=String(i);
+   if(ci===0 && i<list.length){
+    d.classList.add('analyst-colour-cell');d.textContent='●';d.style.color=analystColors[i%6];
+   }else if(ci===1 && i<list.length){
+    d.classList.add('analyst-num');d.textContent=list[i];d.style.background=analystColors[i%6];d.style.color='#fff';
+   }else if(ci>=2)d.textContent=String(i);
    bd.appendChild(d);
   }
   col.appendChild(bd);analystStage.appendChild(col);
@@ -58,10 +61,15 @@ function analystBuild(){
  analystSvg.style.height=(78+rows*48)+'px';
  const ns='http://www.w3.org/2000/svg';
  const cols=[...analystStage.querySelectorAll('.analyst-col')];
- function point(ci,ri,side){
-  const body=cols[ci].querySelector('.analyst-body'),cell=body.children[Math.max(0,Math.min(ri,body.children.length-1))];
+ function point(ci,ri,side,offsetY=0){
+  const body=cols[ci].querySelector('.analyst-body');
+  const safe=Math.max(0,Math.min(ri,body.children.length-1));
+  const cell=body.children[safe];
   const sr=analystStage.getBoundingClientRect(),cr=cell.getBoundingClientRect();
-  return {x:(side==='right'?cr.right:cr.left)-sr.left,y:cr.top-sr.top+cr.height/2};
+  return {
+   x:(side==='right'?cr.right:cr.left)-sr.left,
+   y:cr.top-sr.top+cr.height/2+offsetY
+  };
  }
  const calc=[
   n=>Math.floor(+n/100),
@@ -72,24 +80,36 @@ function analystBuild(){
   n=>(Math.floor(+n/100)+(+n%10))%10,
   n=>(Math.floor(+n/10)%10+(+n%10))%10
  ];
+ function drawAnalystLine(from,to,color,offset){
+  const midX=(from.x+to.x)/2;
+  const bend=offset;
+  const path=document.createElementNS(ns,'path');
+  path.setAttribute('d',`M ${from.x} ${from.y} C ${midX} ${from.y+bend}, ${midX} ${to.y+bend}, ${to.x} ${to.y}`);
+  path.setAttribute('stroke',color);
+  path.setAttribute('stroke-width','4');
+  path.setAttribute('fill','none');
+  path.setAttribute('class','analyst-line');
+  path.setAttribute('vector-effect','non-scaling-stroke');
+  analystSvg.appendChild(path);
+  const dot=document.createElementNS(ns,'circle');
+  dot.setAttribute('cx',to.x);dot.setAttribute('cy',to.y);dot.setAttribute('r','4');dot.setAttribute('fill',color);
+  dot.setAttribute('class','analyst-dot');
+  analystSvg.appendChild(dot);
+ }
  requestAnimationFrame(()=>{
+  // Every pasted row keeps its own colour through the whole chain.
+  // Numeric columns use their actual 0-9 target row; pasted rows beyond row 10 are never clamped into a numeric source row.
   list.forEach((n,i)=>{
    const color=analystColors[i%6];
    const vals=[String(n),...calc.map(f=>String(f(n)))];
-   // colour → number → hundred → ten → unit → BK → H+ten → H+unit → unit+ten
    for(let j=0;j<vals.length;j++){
-    const from=point(j===0?0:j+1, j===0?i:Number(vals[j-1]), 'right');
-    const to=point(j+1, Number(vals[j]), 'left');
-    const line=document.createElementNS(ns,'line');
-    line.setAttribute('x1',from.x);line.setAttribute('y1',from.y);
-    line.setAttribute('x2',to.x);line.setAttribute('y2',to.y);
-    line.setAttribute('stroke',color);line.setAttribute('stroke-width','4');
-    line.setAttribute('class','analyst-line');
-    analystSvg.appendChild(line);
-    const dot=document.createElementNS(ns,'circle');
-    dot.setAttribute('cx',to.x);dot.setAttribute('cy',to.y);
-    dot.setAttribute('r','4');dot.setAttribute('fill',color);
-    analystSvg.appendChild(dot);
+    const fromRow=j===0?i:Number(vals[j-1]);
+    const toRow=Number(vals[j]);
+    const from=point(j===0?0:j+1,fromRow,'right',j===0?0:((i%5)-2)*3);
+    const to=point(j+1,toRow,'left',((i%7)-3)*3);
+    // Small per-row bend keeps repeated targets (e.g. many 0s) visually separated.
+    const bend=((i%9)-4)*5;
+    drawAnalystLine(from,to,color,bend);
    }
   });
  });
