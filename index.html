@@ -73,15 +73,15 @@ function analystBuild(){
   }
   c.appendChild(body);analystStage.appendChild(c);
  });
- const svg=document.getElementById('analystSvg');svg.style.height=(78+rows*48)+'px';
+ const svg=document.getElementById('analystSvg');svg.style.height=(78+rows*48)+'px';svg.style.width='100%';
  const ns='http://www.w3.org/2000/svg',defs=document.createElementNS(ns,'defs');
  defs.innerHTML='<marker id="analystArrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="context-stroke"/></marker>';svg.appendChild(defs);
- const stageRect=analystStage.getBoundingClientRect();
  const colEls=[...analystStage.querySelectorAll('.analyst-col')];
  function point(ci,ri,side){
-  const body=colEls[ci].querySelector('.analyst-body'),el=body.children[Math.min(ri,body.children.length-1)],r=el.getBoundingClientRect();
-  const s=analystStage.getBoundingClientRect();
-  return {x:(side==='right'?r.right:r.left)-s.left,y:r.top+r.height/2-s.top};
+  const col=colEls[ci], body=col.querySelector('.analyst-body');
+  const row=Math.min(ri,body.children.length-1), y=78+row*48+24;
+  const x=side==='right' ? col.offsetLeft+col.offsetWidth : col.offsetLeft;
+  return {x,y};
  }
  const formulas=[
   n=>Math.floor(+n/100),
