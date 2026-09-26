@@ -80,39 +80,34 @@ function analystBuild(){
   n=>(Math.floor(+n/100)+(+n%10))%10,
   n=>(Math.floor(+n/10)%10+(+n%10))%10
  ];
- function drawAnalystLine(from,to,color,offset){
-  const midX=(from.x+to.x)/2;
-  const bend=offset;
-  const path=document.createElementNS(ns,'path');
-  path.setAttribute('d',`M ${from.x} ${from.y} C ${midX} ${from.y+bend}, ${midX} ${to.y+bend}, ${to.x} ${to.y}`);
-  path.setAttribute('stroke',color);
-  path.setAttribute('stroke-width','4');
-  path.setAttribute('fill','none');
-  path.setAttribute('class','analyst-line');
-  path.setAttribute('vector-effect','non-scaling-stroke');
-  analystSvg.appendChild(path);
-  const dot=document.createElementNS(ns,'circle');
-  dot.setAttribute('cx',to.x);dot.setAttribute('cy',to.y);dot.setAttribute('r','4');dot.setAttribute('fill',color);
-  dot.setAttribute('class','analyst-dot');
-  analystSvg.appendChild(dot);
+ function drawAnalystLine(from,to,color){
+  const line=document.createElementNS(ns,'line');
+  line.setAttribute('x1',from.x);line.setAttribute('y1',from.y);
+  line.setAttribute('x2',to.x);line.setAttribute('y2',to.y);
+  line.setAttribute('stroke',color);
+  line.setAttribute('stroke-width','4');
+  line.setAttribute('fill','none');
+  line.setAttribute('class','analyst-line');
+  line.setAttribute('vector-effect','non-scaling-stroke');
+  analystSvg.appendChild(line);
  }
  requestAnimationFrame(()=>{
-  // Every pasted row keeps its own colour through the whole chain.
-  // Numeric columns use their actual 0-9 target row; pasted rows beyond row 10 are never clamped into a numeric source row.
   list.forEach((n,i)=>{
    const color=analystColors[i%6];
+   // Exact chain: colour -> number -> hundred -> ten -> unit -> BK -> H+T -> H+U -> T+U.
+   // Each segment starts exactly at the source cell edge and ends exactly at the target cell edge.
    const vals=[String(n),...calc.map(f=>String(f(n)))];
    for(let j=0;j<vals.length;j++){
+    const fromCol=j===0?0:j+1;
+    const toCol=j+1;
     const fromRow=j===0?i:Number(vals[j-1]);
     const toRow=Number(vals[j]);
-    const from=point(j===0?0:j+1,fromRow,'right',j===0?0:((i%5)-2)*3);
-    const to=point(j+1,toRow,'left',((i%7)-3)*3);
-    // Small per-row bend keeps repeated targets (e.g. many 0s) visually separated.
-    const bend=((i%9)-4)*5;
-    drawAnalystLine(from,to,color,bend);
+    const from=point(fromCol,fromRow,'right',0);
+    const to=point(toCol,toRow,'left',0);
+    drawAnalystLine(from,to,color);
    }
   });
- });
+ });;
 }
 function setZoom(z){zoom=Math.max(.25,Math.min(1.5,z));stage.style.transform='scale('+zoom+')';wrap.style.minHeight=Math.min(innerHeight*.75,3442*zoom)+'px';document.getElementById('zoomValue').textContent=Math.round(zoom*100)+'%';draw()}
 zoomIn.onclick=()=>setZoom(zoom+.1);zoomOut.onclick=()=>setZoom(zoom-.1);zoomFit.onclick=()=>setZoom(Math.min(1,wrap.clientWidth/900));
