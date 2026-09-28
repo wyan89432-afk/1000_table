@@ -76,9 +76,10 @@ function analystBuild(){
   const sr=analystStage.getBoundingClientRect(),cr=cell.getBoundingClientRect();
   // Connect directly to the NUMBER itself: use the center of each number cell.
   // Text may be crossed/covered; the important part is that every number is physically connected.
+  const scale=analystZoom||1;
   return {
-   x:(side==='right'?cr.right:cr.left)-sr.left,
-   y:cr.top-sr.top+cr.height/2
+   x:((side==='right'?cr.right:cr.left)-sr.left)/scale,
+   y:(cr.top-sr.top+cr.height/2)/scale
   };
  }
 
