@@ -67,10 +67,11 @@ function analystBuild(){
 
  function point(ci,ri,side){
   const col=cols[ci];
-  // Connect through the actual number cell, not the shared column border.
-  // Using the cell center makes the path span from one column to the next.
-  const x=col.offsetLeft+col.offsetWidth/2;
-  const y=78+ri*48+24;
+  const body=col.querySelector('.analyst-body');
+  const safe=Math.max(0,Math.min(ri,body.children.length-1));
+  const cell=body.children[safe];
+  const x=col.offsetLeft + (side==='right' ? cell.offsetLeft+cell.offsetWidth : cell.offsetLeft);
+  const y=col.offsetTop + body.offsetTop + cell.offsetTop + cell.offsetHeight/2;
   return {x,y};
  }
  const calc=[
@@ -85,12 +86,11 @@ function analystBuild(){
  function drawAnalystLine(from,to,color,first=false){
   const ns='http://www.w3.org/2000/svg';
   if(first){
-   // Only Number -> hundreds digit gets a clean elbow join:
-   // start clearly from the Number cell, run into the gap, drop vertically,
-   // then join the exact hundreds-digit cell. All three parts use one color.
-   const midX=(from.x+to.x)/2;
+   // ONLY Number -> hundreds digit uses the elbow.
+   // It finishes exactly at the left edge of the hundreds cell.
+   const gapX=from.x+(to.x-from.x)*0.55;
    const p=document.createElementNS(ns,'polyline');
-   p.setAttribute('points',`${from.x},${from.y} ${midX},${from.y} ${midX},${to.y} ${to.x},${to.y}`);
+   p.setAttribute('points',`${from.x},${from.y} ${gapX},${from.y} ${gapX},${to.y} ${to.x},${to.y}`);
    p.setAttribute('stroke',color);p.setAttribute('stroke-width','5');
    p.setAttribute('fill','none');p.setAttribute('class','analyst-line');
    p.setAttribute('stroke-linecap','round');p.setAttribute('stroke-linejoin','round');
@@ -98,6 +98,7 @@ function analystBuild(){
    analystSvg.appendChild(p);
    return;
   }
+  // All following connections are direct: NO vertical drop.
   const line=document.createElementNS(ns,'line');
   line.setAttribute('x1',from.x);line.setAttribute('y1',from.y);
   line.setAttribute('x2',to.x);line.setAttribute('y2',to.y);
