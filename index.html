@@ -70,15 +70,14 @@ function analystBuild(){
  const cols=[...analystStage.querySelectorAll('.analyst-col')];
 
  function point(ci,ri,side){
-  const col=cols[ci];
-  const body=col.querySelector('.analyst-body');
+  const body=cols[ci].querySelector('.analyst-body');
   const safe=Math.max(0,Math.min(ri,body.children.length-1));
   const cell=body.children[safe];
-  // Use the table's own layout coordinates, not getBoundingClientRect().
-  // This keeps the arrow path correct at every zoom level.
-  const x=col.offsetLeft + (side==='right' ? cell.offsetLeft+cell.offsetWidth : cell.offsetLeft);
-  const y=col.offsetTop + cell.offsetTop + cell.offsetHeight/2;
-  return {x,y};
+  const sr=analystStage.getBoundingClientRect(),cr=cell.getBoundingClientRect();
+  return {
+   x:(side==='right'?cr.right:cr.left)-sr.left,
+   y:cr.top-sr.top+cr.height/2
+  };
  }
 
  const calc=[
@@ -114,7 +113,7 @@ function analystBuild(){
    for(let j=0;j<vals.length-1;j++){
     const fromCol=j;
     const toCol=j+1;
-    const fromRow=j===0?i:Number(vals[j]);
+    const fromRow=Number(vals[j])>=0 && j===0 ? i : Number(vals[j]);
     const toRow=Number(vals[j+1]);
     const from=point(fromCol,fromRow,'right');
     const to=point(toCol,toRow,'left');
