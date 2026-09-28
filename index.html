@@ -82,13 +82,28 @@ function analystBuild(){
   n=>(Math.floor(+n/100)+(+n%10))%10,
   n=>(Math.floor(+n/10)%10+(+n%10))%10
  ];
- function drawAnalystLine(from,to,color){
-  const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+ function drawAnalystLine(from,to,color,first=false){
+  const ns='http://www.w3.org/2000/svg';
+  if(first){
+   // Only Number -> hundreds digit gets a clean elbow join:
+   // start clearly from the Number cell, run into the gap, drop vertically,
+   // then join the exact hundreds-digit cell. All three parts use one color.
+   const midX=(from.x+to.x)/2;
+   const p=document.createElementNS(ns,'polyline');
+   p.setAttribute('points',`${from.x},${from.y} ${midX},${from.y} ${midX},${to.y} ${to.x},${to.y}`);
+   p.setAttribute('stroke',color);p.setAttribute('stroke-width','5');
+   p.setAttribute('fill','none');p.setAttribute('class','analyst-line');
+   p.setAttribute('stroke-linecap','round');p.setAttribute('stroke-linejoin','round');
+   p.setAttribute('vector-effect','non-scaling-stroke');
+   analystSvg.appendChild(p);
+   return;
+  }
+  const line=document.createElementNS(ns,'line');
   line.setAttribute('x1',from.x);line.setAttribute('y1',from.y);
   line.setAttribute('x2',to.x);line.setAttribute('y2',to.y);
   line.setAttribute('stroke',color);line.setAttribute('stroke-width','5');
   line.setAttribute('fill','none');line.setAttribute('class','analyst-line');
-  line.setAttribute('vector-effect','non-scaling-stroke');
+  line.setAttribute('stroke-linecap','round');line.setAttribute('vector-effect','non-scaling-stroke');
   analystSvg.appendChild(line);
  }
  requestAnimationFrame(()=>{
@@ -98,7 +113,7 @@ function analystBuild(){
    for(let j=0;j<7;j++){
     const from=point(j,j===0?i:Number(vals[j]),'right');
     const to=point(j+1,Number(vals[j+1]),'left');
-    drawAnalystLine(from,to,color);
+    drawAnalystLine(from,to,color,j===0);
    }
   });
  });
