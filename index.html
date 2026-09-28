@@ -73,8 +73,10 @@ function analystBuild(){
   const safe=Math.max(0,Math.min(ri,body.children.length-1));
   const cell=body.children[safe];
   const sr=analystStage.getBoundingClientRect(),cr=cell.getBoundingClientRect();
+  // Connect directly to the NUMBER itself: use the center of each number cell.
+  // Text may be crossed/covered; the important part is that every number is physically connected.
   return {
-   x:(side==='right'?cr.right:cr.left)-sr.left,
+   x:cr.left-sr.left+cr.width/2,
    y:cr.top-sr.top+cr.height/2
   };
  }
