@@ -86,27 +86,34 @@ function analystBuild(){
  ];
  function drawAnalystLine(from,to,color,first=false){
   const ns='http://www.w3.org/2000/svg';
+  const makeLine=(x1,y1,x2,y2)=>{
+   const line=document.createElementNS(ns,'line');
+   line.setAttribute('x1',x1);line.setAttribute('y1',y1);
+   line.setAttribute('x2',x2);line.setAttribute('y2',y2);
+   line.setAttribute('stroke',color);line.setAttribute('stroke-width','5');
+   line.setAttribute('fill','none');line.setAttribute('class','analyst-line');
+   line.setAttribute('stroke-linecap','round');line.setAttribute('stroke-linejoin','round');
+   line.setAttribute('vector-effect','non-scaling-stroke');
+   analystSvg.appendChild(line);
+  };
   if(first){
-   // ONLY Number -> hundreds digit uses the elbow.
-   // It finishes exactly at the left edge of the hundreds cell.
-   const gapX=from.x+(to.x-from.x)*0.55;
-   const p=document.createElementNS(ns,'polyline');
-   p.setAttribute('points',`${from.x},${from.y} ${gapX},${from.y} ${gapX},${to.y} ${to.x},${to.y}`);
-   p.setAttribute('stroke',color);p.setAttribute('stroke-width','5');
-   p.setAttribute('fill','none');p.setAttribute('class','analyst-line');
-   p.setAttribute('stroke-linecap','round');p.setAttribute('stroke-linejoin','round');
-   p.setAttribute('vector-effect','non-scaling-stroke');
-   analystSvg.appendChild(p);
+   // Number -> hundreds only:
+   // start at the middle of the Number cell's right edge.
+   // Add only a short vertical lead, then turn naturally toward
+   // the target row. Same row stays perfectly horizontal.
+   const dy=to.y-from.y;
+   if(Math.abs(dy)<1){
+    makeLine(from.x,from.y,to.x,to.y);
+   }else{
+    const lead=Math.min(18,Math.max(8,Math.abs(dy)*0.18));
+    const y1=from.y+(dy>0?lead:-lead);
+    makeLine(from.x,from.y,from.x,y1);
+    makeLine(from.x,y1,to.x,to.y);
+   }
    return;
   }
-  // All following connections are direct: NO vertical drop.
-  const line=document.createElementNS(ns,'line');
-  line.setAttribute('x1',from.x);line.setAttribute('y1',from.y);
-  line.setAttribute('x2',to.x);line.setAttribute('y2',to.y);
-  line.setAttribute('stroke',color);line.setAttribute('stroke-width','5');
-  line.setAttribute('fill','none');line.setAttribute('class','analyst-line');
-  line.setAttribute('stroke-linecap','round');line.setAttribute('vector-effect','non-scaling-stroke');
-  analystSvg.appendChild(line);
+  // All other columns: direct edge-to-edge connection.
+  makeLine(from.x,from.y,to.x,to.y);
  }
  requestAnimationFrame(()=>{
   list.forEach((n,i)=>{
@@ -115,16 +122,13 @@ function analystBuild(){
    for(let j=0;j<7;j++){
     let from,to;
     if(j===0){
-      // Number -> hundreds: direct center-to-center geometry.
-      // Same row = horizontal; different rows = natural diagonal angle.
-      // No fixed 90-degree vertical segment.
-      from=point(0,i,'center');
-      to=point(1,Number(vals[1]),'center');
+      from=point(0,i,'right');
+      to=point(1,Number(vals[1]),'left');
     }else{
       from=point(j,Number(vals[j]),'right');
       to=point(j+1,Number(vals[j+1]),'left');
     }
-    drawAnalystLine(from,to,color,false);
+    drawAnalystLine(from,to,color,j===0);
    }
   });
  });
