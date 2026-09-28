@@ -35,7 +35,7 @@ const head=document.getElementById('head'),body=document.getElementById('body'),
 for(let c=0;c<10;c++){const th=document.createElement('th');th.textContent='for '+c;head.appendChild(th)}
 for(let r=0;r<100;r++){const tr=document.createElement('tr');for(let c=0;c<10;c++){const n=c*100+r,td=document.createElement('td'),v=String(n).padStart(3,'0');td.textContent=v;tr.appendChild(td);cells.set(v,td)}body.appendChild(tr)}
 const analystStage=document.getElementById('analystStage'),analystWrap=document.getElementById('analystWrap');let analystSvg=document.getElementById('analystSvg');
- analystStage.style.transform='scale('+analystZoom+')';let analystZoom=1;
+ let analystZoom=1; analystStage.style.transform='scale('+analystZoom+')';
 const analystColors=['#c7a900','#20e04b','#ff3030','#248cff','#8b5a2b','#7a35d8'];
 function analystBuild(){
  const list=parse(),rows=Math.max(10,list.length);
