@@ -70,7 +70,8 @@ function analystBuild(){
   const body=col.querySelector('.analyst-body');
   const safe=Math.max(0,Math.min(ri,body.children.length-1));
   const cell=body.children[safe];
-  const x=col.offsetLeft + (side==='right' ? cell.offsetLeft+cell.offsetWidth : cell.offsetLeft);
+  const x=col.offsetLeft + cell.offsetLeft +
+    (side==='right' ? cell.offsetWidth : side==='center' ? cell.offsetWidth/2 : 0);
   const y=col.offsetTop + body.offsetTop + cell.offsetTop + cell.offsetHeight/2;
   return {x,y};
  }
@@ -112,9 +113,18 @@ function analystBuild(){
    const color=analystColors[i%6];
    const vals=[String(n),...calc.map(f=>String(f(n)))];
    for(let j=0;j<7;j++){
-    const from=point(j,j===0?i:Number(vals[j]),'right');
-    const to=point(j+1,Number(vals[j+1]),'left');
-    drawAnalystLine(from,to,color,j===0);
+    let from,to;
+    if(j===0){
+      // Number -> hundreds: direct center-to-center geometry.
+      // Same row = horizontal; different rows = natural diagonal angle.
+      // No fixed 90-degree vertical segment.
+      from=point(0,i,'center');
+      to=point(1,Number(vals[1]),'center');
+    }else{
+      from=point(j,Number(vals[j]),'right');
+      to=point(j+1,Number(vals[j+1]),'left');
+    }
+    drawAnalystLine(from,to,color,false);
    }
   });
  });
