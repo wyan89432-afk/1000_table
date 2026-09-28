@@ -67,7 +67,9 @@ function analystBuild(){
 
  function point(ci,ri,side){
   const col=cols[ci];
-  const x=col.offsetLeft+(side==='right'?col.offsetWidth:0);
+  // Connect through the actual number cell, not the shared column border.
+  // Using the cell center makes the path span from one column to the next.
+  const x=col.offsetLeft+col.offsetWidth/2;
   const y=78+ri*48+24;
   return {x,y};
  }
