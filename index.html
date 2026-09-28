@@ -39,9 +39,6 @@ const analystStage=document.getElementById('analystStage'),analystWrap=document.
 const analystColors=['#c7a900','#20e04b','#ff3030','#248cff','#8b5a2b','#7a35d8'];
 function analystBuild(){
  const list=parse(),rows=Math.max(10,list.length);
- // Arrow path has exactly 8 nodes:
- // number -> hundred -> ten -> unit -> BK -> H+T -> H+U -> T+U
- // Colour is the row colour of the whole path, not a separate arrow column.
  const headers=['number','hundred digit','ten digit','unit digit','BK(brake)','(Hundred +ten) digit','(Hundred +unit) digit','(unit+ten) digit'];
  analystStage.innerHTML='<svg id="analystSvg" class="analyst-svg"></svg>';
  analystSvg=document.getElementById('analystSvg');
@@ -54,32 +51,26 @@ function analystBuild(){
   for(let i=0;i<total;i++){
    const d=document.createElement('div');d.className='analyst-item';
    if(ci===0 && i<list.length){
-    d.classList.add('analyst-num');
-    d.textContent=list[i];
-    d.style.background=analystColors[i%6];
-    d.style.color='#fff';
-   }else if(ci>0){
-    d.textContent=String(i);
-   }
+    d.classList.add('analyst-num');d.textContent=list[i];
+    d.style.background=analystColors[i%6];d.style.color='#fff';
+   }else if(ci>0)d.textContent=String(i);
    bd.appendChild(d);
   }
   col.appendChild(bd);analystStage.appendChild(col);
  });
- analystSvg.style.height=(78+rows*48)+'px';
- const ns='http://www.w3.org/2000/svg';
  const cols=[...analystStage.querySelectorAll('.analyst-col')];
+ const W=analystStage.clientWidth;
+ const H=78+rows*48;
+ analystSvg.setAttribute('width',W);analystSvg.setAttribute('height',H);
+ analystSvg.setAttribute('viewBox','0 0 '+W+' '+H);
+ analystSvg.style.width=W+'px';analystSvg.style.height=H+'px';
 
  function point(ci,ri,side){
-  const body=cols[ci].querySelector('.analyst-body');
-  const safe=Math.max(0,Math.min(ri,body.children.length-1));
-  const cell=body.children[safe];
-  const sr=analystStage.getBoundingClientRect(),cr=cell.getBoundingClientRect();
-  return {
-   x:(side==='right'?cr.right:cr.left)-sr.left,
-   y:cr.top-sr.top+cr.height/2
-  };
+  const col=cols[ci];
+  const x=col.offsetLeft+(side==='right'?col.offsetWidth:0);
+  const y=78+ri*48+24;
+  return {x,y};
  }
-
  const calc=[
   n=>Math.floor(+n/100),
   n=>Math.floor(+n/10)%10,
@@ -89,34 +80,22 @@ function analystBuild(){
   n=>(Math.floor(+n/100)+(+n%10))%10,
   n=>(Math.floor(+n/10)%10+(+n%10))%10
  ];
-
  function drawAnalystLine(from,to,color){
-  const line=document.createElementNS(ns,'line');
+  const line=document.createElementNS('http://www.w3.org/2000/svg','line');
   line.setAttribute('x1',from.x);line.setAttribute('y1',from.y);
   line.setAttribute('x2',to.x);line.setAttribute('y2',to.y);
-  line.setAttribute('stroke',color);
-  line.setAttribute('stroke-width','5');
-  line.setAttribute('fill','none');
-  line.setAttribute('class','analyst-line');
+  line.setAttribute('stroke',color);line.setAttribute('stroke-width','5');
+  line.setAttribute('fill','none');line.setAttribute('class','analyst-line');
   line.setAttribute('vector-effect','non-scaling-stroke');
   analystSvg.appendChild(line);
  }
-
  requestAnimationFrame(()=>{
   list.forEach((n,i)=>{
    const color=analystColors[i%6];
    const vals=[String(n),...calc.map(f=>String(f(n)))];
-
-   // IMPORTANT: start at the actual pasted NUMBER cell.
-   // Each next segment ends at the exact 0-9 cell represented by the chain.
-   // Example: 640 -> 6 -> 4 -> 0 -> 0 -> 0 -> 6 -> 4.
-   for(let j=0;j<vals.length-1;j++){
-    const fromCol=j;
-    const toCol=j+1;
-    const fromRow=Number(vals[j])>=0 && j===0 ? i : Number(vals[j]);
-    const toRow=Number(vals[j+1]);
-    const from=point(fromCol,fromRow,'right');
-    const to=point(toCol,toRow,'left');
+   for(let j=0;j<7;j++){
+    const from=point(j,j===0?i:Number(vals[j]),'right');
+    const to=point(j+1,Number(vals[j+1]),'left');
     drawAnalystLine(from,to,color);
    }
   });
