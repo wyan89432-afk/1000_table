@@ -38,22 +38,28 @@ const analystStage=document.getElementById('analystStage');let analystSvg=docume
 const analystColors=['#c7a900','#20e04b','#ff3030','#248cff','#8b5a2b','#7a35d8'];
 function analystBuild(){
  const list=parse(),rows=Math.max(10,list.length);
- const headers=['colour','number','hundred digit','ten digit','unit digit','BK(brake)','(Hundred +ten) digit','(Hundred +unit) digit','(unit+ten) digit'];
+ // Arrow path has exactly 8 nodes:
+ // number -> hundred -> ten -> unit -> BK -> H+T -> H+U -> T+U
+ // Colour is the row colour of the whole path, not a separate arrow column.
+ const headers=['number','hundred digit','ten digit','unit digit','BK(brake)','(Hundred +ten) digit','(Hundred +unit) digit','(unit+ten) digit'];
  analystStage.innerHTML='<svg id="analystSvg" class="analyst-svg"></svg>';
  analystSvg=document.getElementById('analystSvg');
+ analystStage.style.gridTemplateColumns='120px repeat(7,1fr)';
  headers.forEach((h,ci)=>{
   const col=document.createElement('div');col.className='analyst-col';
   const hd=document.createElement('div');hd.className='analyst-head';hd.textContent=h;col.appendChild(hd);
   const bd=document.createElement('div');bd.className='analyst-body';
-  // colour/number columns grow with pasted rows; all calculated columns always contain 0-9.
-  const total=ci<2?rows:10;
+  const total=ci===0?rows:10;
   for(let i=0;i<total;i++){
    const d=document.createElement('div');d.className='analyst-item';
    if(ci===0 && i<list.length){
-    d.classList.add('analyst-colour-cell');d.textContent='●';d.style.color=analystColors[i%6];
-   }else if(ci===1 && i<list.length){
-    d.classList.add('analyst-num');d.textContent=list[i];d.style.background=analystColors[i%6];d.style.color='#fff';
-   }else if(ci>=2)d.textContent=String(i);
+    d.classList.add('analyst-num');
+    d.textContent=list[i];
+    d.style.background=analystColors[i%6];
+    d.style.color='#fff';
+   }else if(ci>0){
+    d.textContent=String(i);
+   }
    bd.appendChild(d);
   }
   col.appendChild(bd);analystStage.appendChild(col);
@@ -61,16 +67,18 @@ function analystBuild(){
  analystSvg.style.height=(78+rows*48)+'px';
  const ns='http://www.w3.org/2000/svg';
  const cols=[...analystStage.querySelectorAll('.analyst-col')];
- function point(ci,ri,side,offsetY=0){
+
+ function point(ci,ri,side){
   const body=cols[ci].querySelector('.analyst-body');
   const safe=Math.max(0,Math.min(ri,body.children.length-1));
   const cell=body.children[safe];
   const sr=analystStage.getBoundingClientRect(),cr=cell.getBoundingClientRect();
   return {
    x:(side==='right'?cr.right:cr.left)-sr.left,
-   y:cr.top-sr.top+cr.height/2+offsetY
+   y:cr.top-sr.top+cr.height/2
   };
  }
+
  const calc=[
   n=>Math.floor(+n/100),
   n=>Math.floor(+n/10)%10,
@@ -80,34 +88,38 @@ function analystBuild(){
   n=>(Math.floor(+n/100)+(+n%10))%10,
   n=>(Math.floor(+n/10)%10+(+n%10))%10
  ];
+
  function drawAnalystLine(from,to,color){
   const line=document.createElementNS(ns,'line');
   line.setAttribute('x1',from.x);line.setAttribute('y1',from.y);
   line.setAttribute('x2',to.x);line.setAttribute('y2',to.y);
   line.setAttribute('stroke',color);
-  line.setAttribute('stroke-width','4');
+  line.setAttribute('stroke-width','5');
   line.setAttribute('fill','none');
   line.setAttribute('class','analyst-line');
   line.setAttribute('vector-effect','non-scaling-stroke');
   analystSvg.appendChild(line);
  }
+
  requestAnimationFrame(()=>{
   list.forEach((n,i)=>{
    const color=analystColors[i%6];
-   // Exact chain: colour -> number -> hundred -> ten -> unit -> BK -> H+T -> H+U -> T+U.
-   // Each segment starts exactly at the source cell edge and ends exactly at the target cell edge.
    const vals=[String(n),...calc.map(f=>String(f(n)))];
-   for(let j=0;j<vals.length;j++){
-    const fromCol=j===0?0:j+1;
+
+   // IMPORTANT: start at the actual pasted NUMBER cell.
+   // Each next segment ends at the exact 0-9 cell represented by the chain.
+   // Example: 640 -> 6 -> 4 -> 0 -> 0 -> 0 -> 6 -> 4.
+   for(let j=0;j<vals.length-1;j++){
+    const fromCol=j;
     const toCol=j+1;
-    const fromRow=j===0?i:Number(vals[j-1]);
-    const toRow=Number(vals[j]);
-    const from=point(fromCol,fromRow,'right',0);
-    const to=point(toCol,toRow,'left',0);
+    const fromRow=Number(vals[j])>=0 && j===0 ? i : Number(vals[j]);
+    const toRow=Number(vals[j+1]);
+    const from=point(fromCol,fromRow,'right');
+    const to=point(toCol,toRow,'left');
     drawAnalystLine(from,to,color);
    }
   });
- });;
+ });
 }
 function setZoom(z){zoom=Math.max(.25,Math.min(1.5,z));stage.style.transform='scale('+zoom+')';wrap.style.minHeight=Math.min(innerHeight*.75,3442*zoom)+'px';document.getElementById('zoomValue').textContent=Math.round(zoom*100)+'%';draw()}
 zoomIn.onclick=()=>setZoom(zoom+.1);zoomOut.onclick=()=>setZoom(zoom-.1);zoomFit.onclick=()=>setZoom(Math.min(1,wrap.clientWidth/900));
