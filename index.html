@@ -93,24 +93,28 @@ function analystBuild(){
  ];
 
  function drawAnalystNumberLabels(list){
-  // SVG text is deliberately drawn AFTER all lines, so every number remains visible
-  // even when several same-colour arrows meet on the same cell.
-  list.forEach((n,i)=>{
-   const p=point(0,i,'center');
-   const t=document.createElementNS(ns,'text');
-   t.setAttribute('x',p.x);t.setAttribute('y',p.y+8);
-   t.setAttribute('text-anchor','middle');
-   t.setAttribute('font-family','monospace');
-   t.setAttribute('font-size','22');
-   t.setAttribute('font-weight','900');
-   t.setAttribute('fill','#fff');
-   t.setAttribute('stroke','#050505');
-   t.setAttribute('stroke-width','3');
-   t.setAttribute('paint-order','stroke');
-   t.textContent=n;
-   t.setAttribute('pointer-events','none');
-   analystSvg.appendChild(t);
-  });
+  // Draw every cell number on the SVG top layer so arrows can pass underneath
+  // while all numbers remain readable, including shared/meeting targets.
+  const totalRows=Math.max(10,list.length);
+  for(let ci=0;ci<8;ci++){
+   const total=ci===0?list.length:10;
+   for(let ri=0;ri<total;ri++){
+    const p=point(ci,ri,'center');
+    const t=document.createElementNS(ns,'text');
+    t.setAttribute('x',p.x);t.setAttribute('y',p.y+8);
+    t.setAttribute('text-anchor','middle');
+    t.setAttribute('font-family','monospace');
+    t.setAttribute('font-size',ci===0?'22':'18');
+    t.setAttribute('font-weight','900');
+    t.setAttribute('fill','#fff');
+    t.setAttribute('stroke','#050505');
+    t.setAttribute('stroke-width','3');
+    t.setAttribute('paint-order','stroke');
+    t.textContent=ci===0?list[ri]:String(ri);
+    t.setAttribute('pointer-events','none');
+    analystSvg.appendChild(t);
+   }
+  }
  }
  function drawAnalystLine(from,to,color){
   const line=document.createElementNS(ns,'line');
