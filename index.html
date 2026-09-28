@@ -66,13 +66,11 @@ function analystBuild(){
  analystSvg.style.width=W+'px';analystSvg.style.height=H+'px';
 
  function point(ci,ri,side){
-  const col=cols[ci];
-  const body=col.querySelector('.analyst-body');
+  const col=cols[ci], body=col.querySelector('.analyst-body');
   const safe=Math.max(0,Math.min(ri,body.children.length-1));
   const cell=body.children[safe];
-  const x=col.offsetLeft + cell.offsetLeft +
-    (side==='right' ? cell.offsetWidth : side==='center' ? cell.offsetWidth/2 : 0);
-  const y=col.offsetTop + body.offsetTop + cell.offsetTop + cell.offsetHeight/2;
+  const x=col.offsetLeft + (side==='right' ? col.offsetWidth : 0);
+  const y=body.offsetTop + cell.offsetTop + cell.offsetHeight/2;
   return {x,y};
  }
  const calc=[
@@ -86,34 +84,81 @@ function analystBuild(){
  ];
  function drawAnalystLine(from,to,color,first=false){
   const ns='http://www.w3.org/2000/svg';
-  const makeLine=(x1,y1,x2,y2)=>{
-   const line=document.createElementNS(ns,'line');
-   line.setAttribute('x1',x1);line.setAttribute('y1',y1);
-   line.setAttribute('x2',x2);line.setAttribute('y2',y2);
-   line.setAttribute('stroke',color);line.setAttribute('stroke-width','5');
-   line.setAttribute('fill','none');line.setAttribute('class','analyst-line');
-   line.setAttribute('stroke-linecap','round');line.setAttribute('stroke-linejoin','round');
-   line.setAttribute('vector-effect','non-scaling-stroke');
-   analystSvg.appendChild(line);
-  };
-  if(first){
-   // Number -> hundreds only:
-   // start at the middle of the Number cell's right edge.
-   // Add only a short vertical lead, then turn naturally toward
-   // the target row. Same row stays perfectly horizontal.
-   const dy=to.y-from.y;
-   if(Math.abs(dy)<1){
-    makeLine(from.x,from.y,to.x,to.y);
-   }else{
-    const lead=Math.min(18,Math.max(8,Math.abs(dy)*0.18));
-    const y1=from.y+(dy>0?lead:-lead);
-    makeLine(from.x,from.y,from.x,y1);
-    makeLine(from.x,y1,to.x,to.y);
+  const line=document.createElementNS(ns,'line');
+  line.setAttribute('x1',from.x);line.setAttribute('y1',from.y);
+  line.setAttribute('x2',to.x);line.setAttribute('y2',to.y);
+  line.setAttribute('stroke',color);line.setAttribute('stroke-width','5');
+  line.setAttribute('fill','none');line.setAttribute('class','analyst-line');
+  line.setAttribute('stroke-linecap','round');line.setAttribute('stroke-linejoin','round');
+  line.setAttribute('vector-effect','non-scaling-stroke');
+  analystSvg.appendChild(line);
+ }
+ requestAnimationFrame(()=>{
+  list.forEach((n,i)=>{
+   const color=analystColors[i%6];
+   const vals=[String(n),...calc.map(f=>String(f(n)))];
+   for(let j=0;j<7;j++){
+    const from=point(j,j===0?i:Number(vals[j]),'right');
+    const to=point(j+1,Number(vals[j+1]),'left');
+    drawAnalystLine(from,to,color,false);
    }
-   return;
+  });
+ });
+ction analystBuild(){
+ const list=parse(),rows=Math.max(10,list.length);
+ const headers=['number','hundred digit','ten digit','unit digit','BK(brake)','(Hundred +ten) digit','(Hundred +unit) digit','(unit+ten) digit'];
+ analystStage.innerHTML='<svg id="analystSvg" class="analyst-svg"></svg>';
+ analystSvg=document.getElementById('analystSvg');
+ analystStage.style.gridTemplateColumns='120px repeat(7,1fr)';
+ headers.forEach((h,ci)=>{
+  const col=document.createElement('div');col.className='analyst-col';
+  const hd=document.createElement('div');hd.className='analyst-head';hd.textContent=h;col.appendChild(hd);
+  const bd=document.createElement('div');bd.className='analyst-body';
+  const total=ci===0?rows:10;
+  for(let i=0;i<total;i++){
+   const d=document.createElement('div');d.className='analyst-item';
+   if(ci===0 && i<list.length){
+    d.classList.add('analyst-num');d.textContent=list[i];
+    d.style.background=analystColors[i%6];d.style.color='#fff';
+   }else if(ci>0)d.textContent=String(i);
+   bd.appendChild(d);
   }
-  // All other columns: direct edge-to-edge connection.
-  makeLine(from.x,from.y,to.x,to.y);
+  col.appendChild(bd);analystStage.appendChild(col);
+ });
+ const cols=[...analystStage.querySelectorAll('.analyst-col')];
+ const W=analystStage.clientWidth;
+ const H=78+rows*48;
+ analystSvg.setAttribute('width',W);analystSvg.setAttribute('height',H);
+ analystSvg.setAttribute('viewBox','0 0 '+W+' '+H);
+ analystSvg.style.width=W+'px';analystSvg.style.height=H+'px';
+
+ function point(ci,ri,side){
+  const col=cols[ci], body=col.querySelector('.analyst-body');
+  const safe=Math.max(0,Math.min(ri,body.children.length-1));
+  const cell=body.children[safe];
+  const x=col.offsetLeft + (side==='right' ? col.offsetWidth : 0);
+  const y=body.offsetTop + cell.offsetTop + cell.offsetHeight/2;
+  return {x,y};
+ }
+ const calc=[
+  n=>Math.floor(+n/100),
+  n=>Math.floor(+n/10)%10,
+  n=>+n%10,
+  n=>(Math.floor(+n/100)+Math.floor(+n/10)%10+(+n%10))%10,
+  n=>(Math.floor(+n/100)+Math.floor(+n/10)%10)%10,
+  n=>(Math.floor(+n/100)+(+n%10))%10,
+  n=>(Math.floor(+n/10)%10+(+n%10))%10
+ ];
+ function drawAnalystLine(from,to,color,first=false){
+  const ns='http://www.w3.org/2000/svg';
+  const line=document.createElementNS(ns,'line');
+  line.setAttribute('x1',from.x);line.setAttribute('y1',from.y);
+  line.setAttribute('x2',to.x);line.setAttribute('y2',to.y);
+  line.setAttribute('stroke',color);line.setAttribute('stroke-width','5');
+  line.setAttribute('fill','none');line.setAttribute('class','analyst-line');
+  line.setAttribute('stroke-linecap','round');line.setAttribute('stroke-linejoin','round');
+  line.setAttribute('vector-effect','non-scaling-stroke');
+  analystSvg.appendChild(line);
  }
  requestAnimationFrame(()=>{
   list.forEach((n,i)=>{
