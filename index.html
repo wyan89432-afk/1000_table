@@ -40,9 +40,10 @@ const analystColors=['#c7a900','#20e04b','#ff3030','#248cff','#8b5a2b','#7a35d8'
 function analystBuild(){
  const list=parse(),rows=Math.max(10,list.length);
  const headers=['number','hundred digit','ten digit','unit digit','BK(brake)','(Hundred +ten) digit','(Hundred +unit) digit','(unit+ten) digit'];
- analystStage.innerHTML='<svg id="analystSvg" class="analyst-svg"></svg>';
- analystSvg=document.getElementById('analystSvg');
- analystStage.style.gridTemplateColumns='120px repeat(7,1fr)';
+ analystStage.innerHTML='<div class="analyst-grid"></div>';
+ const grid=analystStage.querySelector('.analyst-grid');
+ grid.style.display='grid'; grid.style.gridTemplateColumns='120px repeat(7,1fr)';
+ grid.style.position='relative'; grid.style.zIndex='1';
  headers.forEach((h,ci)=>{
   const col=document.createElement('div');col.className='analyst-col';
   const hd=document.createElement('div');hd.className='analyst-head';hd.textContent=h;col.appendChild(hd);
@@ -56,108 +57,61 @@ function analystBuild(){
    }else if(ci>0)d.textContent=String(i);
    bd.appendChild(d);
   }
-  col.appendChild(bd);analystStage.appendChild(col);
+  col.appendChild(bd);grid.appendChild(col);
  });
- const cols=[...analystStage.querySelectorAll('.analyst-col')];
- const W=analystStage.clientWidth;
- const H=78+rows*48;
- analystSvg.setAttribute('width',W);analystSvg.setAttribute('height',H);
- analystSvg.setAttribute('viewBox','0 0 '+W+' '+H);
- analystSvg.style.clipPath='inset(78px 0 0 0)';
- analystSvg.style.width=W+'px';analystSvg.style.height=H+'px';
+ const cols=[...grid.querySelectorAll('.analyst-col')];
+ const W=grid.clientWidth,H=78+rows*48;
+ const overlay=document.createElementNS('http://www.w3.org/2000/svg','svg');
+ overlay.setAttribute('class','analyst-svg');overlay.setAttribute('width',W);overlay.setAttribute('height',H);
+ overlay.setAttribute('viewBox','0 0 '+W+' '+H);
+ overlay.style.cssText='position:absolute;left:0;top:78px;width:'+W+'px;height:'+(H-78)+'px;z-index:3;pointer-events:none;overflow:visible;';
+ analystStage.appendChild(overlay); analystSvg=overlay;
 
- function point(ci,ri,side,edge=true){
-  const col=cols[ci], bd=col.querySelector('.analyst-body');
-  const safe=Math.max(0,Math.min(Number(ri)||0,bd.children.length-1));
-  const cell=bd.children[safe];
-  const cx=col.offsetLeft + cell.offsetLeft + cell.offsetWidth/2;
-  const cy=78 + cell.offsetTop + cell.offsetHeight/2;
-  if(!edge) return {x:cx,y:cy};
-  return {x:cx,y:cy,w:cell.offsetWidth/2,h:cell.offsetHeight/2};
+ function point(ci,ri){
+  const col=cols[ci],bd=col.querySelector('.analyst-body');
+  const safe=Math.max(0,Math.min(Number(ri)||0,bd.children.length-1)),cell=bd.children[safe];
+  return {x:col.offsetLeft+cell.offsetLeft+cell.offsetWidth/2,
+          y:cell.offsetTop+cell.offsetHeight/2,
+          w:cell.offsetWidth/2,h:cell.offsetHeight/2};
+ }
+ function edge(from,to){
+  const dx=to.x-from.x,dy=to.y-from.y,d=Math.hypot(dx,dy)||1;
+  const t=Math.min(dx?from.w/Math.abs(dx):Infinity,dy?from.h/Math.abs(dy):Infinity);
+  return {x:from.x+dx/d*t,y:from.y+dy/d*t};
  }
  const calc=[
-  n=>Math.floor(+n/100),
-  n=>Math.floor(+n/10)%10,
-  n=>+n%10,
+  n=>Math.floor(+n/100), n=>Math.floor(+n/10)%10, n=>+n%10,
   n=>(Math.floor(+n/100)+Math.floor(+n/10)%10+(+n%10))%10,
   n=>(Math.floor(+n/100)+Math.floor(+n/10)%10)%10,
   n=>(Math.floor(+n/100)+(+n%10))%10,
   n=>(Math.floor(+n/10)%10+(+n%10))%10
  ];
- function edgePoint(from,to){
-  const dx=to.x-from.x,dy=to.y-from.y,d=Math.hypot(dx,dy)||1;
-  const tx=dx?from.w/Math.abs(dx):Infinity;
-  const ty=dy?from.h/Math.abs(dy):Infinity;
-  const t=Math.min(tx,ty);
-  return {x:from.x+dx/d*t,y:from.y+dy/d*t};
- }
- function drawAnalystLine(from,to,color,first=false,labelValue=''){
-  const ns='http://www.w3.org/2000/svg';
-  const path=document.createElementNS(ns,'path');
-  let d;
-  if(first){
-   const dx=to.x-from.x,dy=to.y-from.y;
-   if(Math.abs(dy)<1){
-    d='M '+from.x+' '+from.y+' L '+to.x+' '+to.y;
-   }else{
-    const dir=dy>0?1:-1;
-    const lead=Math.min(from.h*.72,Math.max(10,Math.abs(dy)*0.12));
-    const p1={x:from.x,y:from.y+dir*lead};
-    const target=edgePoint(to,from);
-    const c1x=p1.x,c1y=p1.y;
-    const c2x=target.x-(target.x-p1.x)*0.22,c2y=target.y-(target.y-p1.y)*0.22;
-    d='M '+from.x+' '+from.y+' L '+p1.x+' '+p1.y+' C '+c1x+' '+c1y+' '+c2x+' '+c2y+' '+target.x+' '+target.y;
-   }
-  }else{
-   const a=edgePoint(from,to),b=edgePoint(to,from);
-   d='M '+a.x+' '+a.y+' L '+b.x+' '+b.y;
-  }
-  path.setAttribute('d',d);
-  path.setAttribute('stroke',color);
-  path.setAttribute('stroke-width','5');
-  path.setAttribute('fill','none');
-  path.setAttribute('class','analyst-line');
-  path.setAttribute('stroke-linecap','round');
-  path.setAttribute('stroke-linejoin','round');
-  path.setAttribute('vector-effect','non-scaling-stroke');
-  path.setAttribute('marker-end','url(#analystArrowHead)');
-  analystSvg.appendChild(path);
+ const ns='http://www.w3.org/2000/svg';
+ const defs=document.createElementNS(ns,'defs');
+ defs.innerHTML='<marker id="analystArrowHead" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><path d="M0,0 L9,3.5 L0,7 Z" fill="context-stroke"/></marker>';
+ overlay.appendChild(defs);
 
-  // Show the connected value on the arrow, but never in the heading row.
-  const label=document.createElementNS(ns,'g');
-  label.setAttribute('class','analyst-arrow-label');
-  const mid=document.createElementNS(ns,'text');
-  const mx=(from.x+to.x)/2, my=(from.y+to.y)/2;
-  mid.setAttribute('x',mx);
-  mid.setAttribute('y',my-7);
-  mid.setAttribute('fill','#fff');
-  mid.setAttribute('font-size','13');
-  mid.setAttribute('font-weight','bold');
-  mid.setAttribute('text-anchor','middle');
-  mid.setAttribute('dominant-baseline','middle');
-  mid.setAttribute('paint-order','stroke');
-  mid.setAttribute('stroke','#050505');
-  mid.setAttribute('stroke-width','4');
-  mid.textContent=String(labelValue);
-  label.appendChild(mid);
-  analystSvg.appendChild(label);
+ function line(from,to,color,first){
+  const p=document.createElementNS(ns,'path');let d;
+  if(first && Math.abs(to.y-from.y)>1){
+   const dy=to.y-from.y,dir=dy>0?1:-1,lead=Math.min(from.h*.72,Math.max(8,Math.abs(dy)*.12));
+   const q={x:from.x,y:from.y+dir*lead},t=edge(to,from);
+   d='M '+from.x+' '+from.y+' L '+q.x+' '+q.y+' C '+q.x+' '+q.y+' '+(t.x-(t.x-q.x)*.2)+' '+(t.y-(t.y-q.y)*.2)+' '+t.x+' '+t.y;
+  }else{
+   const a=edge(from,to),b=edge(to,from); d='M '+a.x+' '+a.y+' L '+b.x+' '+b.y;
+  }
+  p.setAttribute('d',d);p.setAttribute('stroke',color);p.setAttribute('stroke-width','5');
+  p.setAttribute('fill','none');p.setAttribute('stroke-linecap','round');p.setAttribute('stroke-linejoin','round');
+  p.setAttribute('marker-end','url(#analystArrowHead)');p.setAttribute('vector-effect','non-scaling-stroke');
+  overlay.appendChild(p);
  }
  requestAnimationFrame(()=>{
-  const defs=document.createElementNS('http://www.w3.org/2000/svg','defs');
-  defs.innerHTML='<marker id="analystArrowHead" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><path d="M0,0 L9,3.5 L0,7 Z" fill="context-stroke"/></marker>';
-  analystSvg.appendChild(defs);
   list.forEach((n,i)=>{
-   const color=analystColors[i%6];
-   const vals=[String(n),...calc.map(f=>String(f(n)))];
-   for(let j=0;j<7;j++){
-    const from=point(j,j===0?i:Number(vals[j]),'right',true);
-    const to=point(j+1,Number(vals[j+1]),'left',true);
-    drawAnalystLine(from,to,color,j===0,vals[j+1]);
-   }
+   const vals=[String(n),...calc.map(f=>String(f(n)))],color=analystColors[i%6];
+   for(let j=0;j<7;j++) line(point(j,j===0?i:Number(vals[j])),point(j+1,Number(vals[j+1])),color,j===0);
   });
  });
-}
-function setAnalystZoom(z){
+}function setAnalystZoom(z){
  analystZoom=Math.max(.4,Math.min(2.5,z));
  analystStage.style.transform='scale('+analystZoom+')';
  analystWrap.style.minHeight=Math.min(innerHeight*.65,(78+Math.max(10,parse().length)*48)*analystZoom)+'px';
