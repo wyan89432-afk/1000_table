@@ -98,10 +98,6 @@ function analystBuild(){
   n=>(Math.floor(+n/10)%10+(+n%10))%10
  ];
 
- const defs=document.createElementNS(ns,'defs');
- defs.innerHTML='<marker id="analystArrowHead" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="context-stroke"></path></marker>';
- overlay.appendChild(defs);
-
  function addLine(from,to,color,first){
   const p=document.createElementNS(ns,'path');
   let d;
@@ -110,21 +106,18 @@ function analystBuild(){
    const dy=to.y-from.y;
    const dir=dy>0?1:-1;
    const lead=Math.min(18,Math.max(8,Math.abs(dy)*0.12));
-   const q={x:from.x,y:from.y+dir*lead};
-   const c1={x:q.x,y:q.y};
-   const c2={x:to.x,y:to.y-dy*0.18};
-   d='M '+from.x+' '+from.y+' L '+q.x+' '+q.y+' C '+c1.x+' '+c1.y+' '+c2.x+' '+c2.y+' '+to.x+' '+to.y;
+   const qx=from.x,qy=from.y+dir*lead;
+   d='M '+from.x+' '+from.y+' L '+qx+' '+qy+' L '+to.x+' '+to.y;
   }else{
    d='M '+from.x+' '+from.y+' L '+to.x+' '+to.y;
   }
 
   p.setAttribute('d',d);
   p.setAttribute('stroke',color);
-  p.setAttribute('stroke-width','4');
+  p.setAttribute('stroke-width','3');
   p.setAttribute('fill','none');
   p.setAttribute('stroke-linecap','round');
   p.setAttribute('stroke-linejoin','round');
-  p.setAttribute('marker-end','url(#analystArrowHead)');
   p.setAttribute('vector-effect','non-scaling-stroke');
   overlay.appendChild(p);
  }
