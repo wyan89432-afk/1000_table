@@ -70,7 +70,7 @@ function analystBuild(){
   const safe=Math.max(0,Math.min(Number(ri)||0,bd.children.length-1));
   const cell=bd.children[safe];
   return {
-   x: side==='right' ? cell.offsetLeft+cell.offsetWidth : cell.offsetLeft,
+   x: col.offsetLeft + (side==='right' ? cell.offsetLeft+cell.offsetWidth : cell.offsetLeft),
    y: 78 + cell.offsetTop + cell.offsetHeight/2
   };
  }
@@ -89,10 +89,12 @@ function analystBuild(){
   let d;
   if(first && Math.abs(to.y-from.y)>1){
    const dy=to.y-from.y;
-   const lead=Math.min(28,Math.max(10,Math.abs(dy)*0.16));
+   const dir=dy>0?1:-1;
+   const lead=Math.min(26,Math.max(9,Math.abs(dy)*0.12));
    const sx=from.x, sy=from.y;
-   const c1x=sx+lead, c1y=sy+(dy>0?Math.min(10,lead):Math.max(-10,-lead));
-   d='M '+sx+' '+sy+' C '+c1x+' '+c1y+' '+(to.x-18)+' '+(to.y-dy*0.08)+' '+to.x+' '+to.y;
+   const c1x=sx, c1y=sy+dir*lead;
+   const c2x=to.x-(to.x-sx)*0.22, c2y=to.y-(to.y-(sy+dir*lead))*0.22;
+   d='M '+sx+' '+sy+' C '+c1x+' '+c1y+' '+c2x+' '+c2y+' '+to.x+' '+to.y;
   }else{
    d='M '+from.x+' '+from.y+' L '+to.x+' '+to.y;
   }
