@@ -14,13 +14,13 @@ button{border:0;border-radius:9px;padding:10px 17px;font-weight:bold;cursor:poin
 #catRunner{position:absolute;z-index:10;display:none;pointer-events:none;transform:translate(-50%,-50%);font-size:34px;filter:drop-shadow(0 2px 2px #555);transition:none}
 #movingLayer{position:absolute;left:0;top:0;width:900px;height:3442px;z-index:9;pointer-events:none;display:none;overflow:visible}.movingUnit{position:absolute;left:0;top:0;width:0;height:0}.movingLine{position:absolute;height:6px;background:#ff2020;border-radius:4px;transform-origin:0 50%;box-shadow:0 0 2px #700}.movingHead{position:absolute;width:0;height:0;border-top:9px solid transparent;border-bottom:9px solid transparent;border-left:16px solid #ff2020;transform-origin:50% 50%}.movingNum{position:absolute;min-width:30px;height:24px;padding:2px 5px;border-radius:6px;background:#12a84b;color:#fff;border:2px solid #fff;text-align:center;font:bold 13px Arial;line-height:16px;transform:translate(-50%,-150%);white-space:nowrap}.cat-number{position:absolute;right:-11px;bottom:-5px;background:var(--green);color:white;border:2px solid white;border-radius:7px;min-width:27px;height:27px;padding:2px 5px;text-align:center;font:bold 14px Arial;line-height:19px}
 #status{text-align:center;color:#aab4c3;font-size:13px;margin-top:8px;min-height:18px}footer{text-align:center;color:#8090a5;padding:20px;font-size:13px}@media(max-width:600px){main{padding:9px}.panel{padding:11px}h1{font-size:25px}textarea{height:130px}.zoom-bar button,.cat-bar button{padding:9px 12px}}
-.analyst-controls{display:flex;gap:9px;justify-content:center;align-items:center;flex-wrap:wrap;background:#111a29;padding:10px;border-radius:10px;margin-bottom:10px}.analyst-wrap{position:relative;overflow:auto;background:#050505;border:2px solid #fff;border-radius:10px;max-height:75vh}.analyst-stage{transform-origin:top left}.analyst-stage{position:relative;display:grid;grid-template-columns:120px repeat(7,1fr);min-width:1120px;background:#050505}.analyst-col{position:relative;border-right:0}.analyst-head{height:78px;background:#111;color:#fff;border-bottom:2px solid #fff;font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;text-align:center;padding:4px}.analyst-body{position:relative}.analyst-item{height:48px;border-bottom:1px solid #444;display:flex;align-items:center;justify-content:center;color:#fff;background:#050505;font-size:18px;font-family:monospace;position:relative;z-index:2}.analyst-num{font-size:22px;font-weight:900}.analyst-colour{font-size:28px}.analyst-digit{font-size:20px}.analyst-svg{position:absolute;left:0;top:0;width:100%;height:100%;z-index:3;pointer-events:none;overflow:visible;display:block}.analyst-col{position:relative;z-index:2}.analyst-item{background:transparent;position:relative;z-index:4}.analyst-line{fill:none;stroke-width:4;opacity:1;vector-effect:non-scaling-stroke}.analyst-arrow-label{pointer-events:none}.analyst-dot{stroke:#fff;stroke-width:1}.analyst-title{margin:0 0 10px;text-align:center;color:#fff}.analyst-note{font-size:13px;color:#aab4c3;text-align:center;margin:8px 0 0}.analyst-stage{--rowh:48px}.analyst-number-cell{border:1px solid #fff}.analyst-colour-cell{font-size:24px}</style></head>
+.analyst-controls{display:flex;gap:9px;justify-content:center;align-items:center;flex-wrap:wrap;background:#111a29;padding:10px;border-radius:10px;margin-bottom:10px}.analyst-wrap{position:relative;overflow:auto;background:#050505;border:2px solid #fff;border-radius:10px;max-height:75vh}.analyst-stage{position:relative;display:block;min-width:1120px;width:100%;background:#050505;transform-origin:top left}.analyst-grid{position:relative;display:grid;grid-template-columns:120px repeat(7,1fr);width:100%;min-width:1120px;background:#050505}.analyst-col{position:relative;z-index:2;border-right:2px solid #4a4a4a}.analyst-col:last-child{border-right:0}.analyst-head{height:78px;background:#111;color:#fff;border-bottom:2px solid #fff;border-top:0;font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;text-align:center;padding:4px}.analyst-body{position:relative}.analyst-item{height:48px;border-bottom:1px solid #444;display:flex;align-items:center;justify-content:center;color:#fff;background:transparent;font-size:18px;font-family:monospace;position:relative;z-index:4}.analyst-num{font-size:22px;font-weight:900}.analyst-svg{position:absolute;left:0;top:78px;width:100%;height:calc(100% - 78px);z-index:3;pointer-events:none;overflow:visible;display:block}.analyst-title{margin:0 0 10px;text-align:center;color:#fff}.analyst-note{font-size:13px;color:#aab4c3;text-align:center;margin:8px 0 0}</style></head>
 <body>
 <header><h1>1000 TABLE 🐈</h1><div class="sub">000 မှ 999 အထိ • Paste • Connect • Cat Runner</div></header>
 <main>
 <section class="panel"><label for="numbers">Search / Paste Numbers (1 Column • Unlimited Rows)</label><textarea id="numbers" placeholder="015&#10;127&#10;342&#10;908"></textarea>
 <div class="buttons"><button id="apply">Search & Draw</button><button id="clear" class="secondary">Clear</button><button id="download" class="download-btn">⬇ Download PNG</button></div><div class="hint">Paste လုပ်ထားသော Number များကို 🟡 Highlight၊ 🔴 Arrow ဖြင့် Join လုပ်ပေးမည်။</div><div id="status"></div></section>
-<section class="panel stats"><div class="stat">Total: <b>1000</b></div><div class="stat">Pasted Rows: <b id="count">0</b></div><div class="stat">Found: <b id="found">0</b></div></section><section class="panel"><h2 class="analyst-title">ANALYST TABLE</h2><div class="analyst-controls"><button id="analystZoomOut" class="secondary">−</button><button id="analystZoomFit">Fit</button><button id="analystZoomIn" class="secondary">+</button><span id="analystZoomValue" class="zoom-value">100%</span><button id="analystDownload" class="download-btn">⬇ Download Analyst PNG</button></div><div class="analyst-wrap" id="analystWrap"><div id="analystStage" class="analyst-stage"><svg id="analystSvg" class="analyst-svg"></svg></div></div><div class="analyst-note">သက်ဆိုင်ရာ number ကို column တစ်ခုမှ နောက် column ၏ သက်ဆိုင်ရာ number ဆီ အဆင့်လိုက် colour line ဖြင့် ဆက်ပြထားသည်။</div></section>
+<section class="panel stats"><div class="stat">Total: <b>1000</b></div><div class="stat">Pasted Rows: <b id="count">0</b></div><div class="stat">Found: <b id="found">0</b></div></section><section class="panel"><h2 class="analyst-title">ANALYST TABLE</h2><div class="analyst-controls"><button id="analystZoomOut" class="secondary">−</button><button id="analystZoomFit">Fit</button><button id="analystZoomIn" class="secondary">+</button><span id="analystZoomValue" class="zoom-value">100%</span><button id="analystDownload" class="download-btn">⬇ Download Analyst PNG</button></div><div class="analyst-wrap" id="analystWrap"><div id="analystStage" class="analyst-stage"></div></div><div class="analyst-note">သက်ဆိုင်ရာ number ကို column တစ်ခုမှ နောက် column ၏ သက်ဆိုင်ရာ number ဆီ အဆင့်လိုက် colour line ဖြင့် ဆက်ပြထားသည်။</div></section>
 <section class="panel">
 <div class="cat-bar"><span class="zoom-title">🔴 Moving Arrows</span><button id="moveToggle" class="cat-btn">🔴 MOVE OFF</button><button id="moveStop" class="secondary">⏹ Stop</button><button id="accDown" class="secondary">−</button><span class="speed" id="accValue">1.0×</span><button id="accUp" class="secondary">+</button></div>
 <div class="hint" style="text-align:center">🔴 MOVE ကိုဖွင့်ပါက မူလ Arrow/Cat များပျောက်ပြီး Red Arrow ၃ ခု ရွေ့လျားမည်။ − / + ဖြင့် acceleration အမြန်နှုန်းချိန်နိုင်သည်။</div>
@@ -34,84 +34,118 @@ button{border:0;border-radius:9px;padding:10px 17px;font-weight:bold;cursor:poin
 const head=document.getElementById('head'),body=document.getElementById('body'),input=document.getElementById('numbers'),wrap=document.getElementById('wrap'),stage=document.getElementById('stage'),svg=document.getElementById('svgLayer'),cat=document.getElementById('catRunner'),catNumber=document.getElementById('catNumber'),cells=new Map(),status=document.getElementById('status');let zoom=1,catOn=false,speed=1,segments=[],running=false,stopRequested=false,runToken=0,moveOn=false,moveSpeed=1,moveRunning=false,moveToken=0;
 for(let c=0;c<10;c++){const th=document.createElement('th');th.textContent='for '+c;head.appendChild(th)}
 for(let r=0;r<100;r++){const tr=document.createElement('tr');for(let c=0;c<10;c++){const n=c*100+r,td=document.createElement('td'),v=String(n).padStart(3,'0');td.textContent=v;tr.appendChild(td);cells.set(v,td)}body.appendChild(tr)}
-const analystStage=document.getElementById('analystStage'),analystWrap=document.getElementById('analystWrap');let analystSvg=document.getElementById('analystSvg');
- let analystZoom=1; analystStage.style.transform='scale('+analystZoom+')';
+const analystStage=document.getElementById('analystStage'),analystWrap=document.getElementById('analystWrap');let analystSvg=null;
+let analystZoom=1;
 const analystColors=['#c7a900','#20e04b','#ff3030','#248cff','#8b5a2b','#7a35d8'];
+
 function analystBuild(){
  const list=parse(),rows=Math.max(10,list.length);
  const headers=['number','hundred digit','ten digit','unit digit','BK(brake)','(Hundred +ten) digit','(Hundred +unit) digit','(unit+ten) digit'];
  analystStage.innerHTML='<div class="analyst-grid"></div>';
  const grid=analystStage.querySelector('.analyst-grid');
- grid.style.display='grid'; grid.style.gridTemplateColumns='120px repeat(7,1fr)';
- grid.style.position='relative'; grid.style.zIndex='1';
+
  headers.forEach((h,ci)=>{
   const col=document.createElement('div');col.className='analyst-col';
   const hd=document.createElement('div');hd.className='analyst-head';hd.textContent=h;col.appendChild(hd);
   const bd=document.createElement('div');bd.className='analyst-body';
   const total=ci===0?rows:10;
+
   for(let i=0;i<total;i++){
    const d=document.createElement('div');d.className='analyst-item';
    if(ci===0 && i<list.length){
-    d.classList.add('analyst-num');d.textContent=list[i];
-    d.style.background=analystColors[i%6];d.style.color='#fff';
-   }else if(ci>0)d.textContent=String(i);
+    d.classList.add('analyst-num');
+    d.textContent=list[i];
+    d.style.background=analystColors[i%6];
+   }else if(ci>0){
+    d.textContent=String(i);
+   }
    bd.appendChild(d);
   }
-  col.appendChild(bd);grid.appendChild(col);
+  col.appendChild(bd);
+  grid.appendChild(col);
  });
+
  const cols=[...grid.querySelectorAll('.analyst-col')];
- const W=grid.clientWidth,H=78+rows*48;
- const overlay=document.createElementNS('http://www.w3.org/2000/svg','svg');
- overlay.setAttribute('class','analyst-svg');overlay.setAttribute('width',W);overlay.setAttribute('height',H);
- overlay.setAttribute('viewBox','0 0 '+W+' '+H);
- overlay.style.cssText='position:absolute;left:0;top:78px;width:'+W+'px;height:'+(H-78)+'px;z-index:3;pointer-events:none;overflow:visible;';
- analystStage.appendChild(overlay); analystSvg=overlay;
+ const bodyHeight=rows*48;
+ const width=grid.clientWidth;
+
+ const ns='http://www.w3.org/2000/svg';
+ const overlay=document.createElementNS(ns,'svg');
+ overlay.setAttribute('class','analyst-svg');
+ overlay.setAttribute('viewBox','0 0 '+width+' '+bodyHeight);
+ overlay.setAttribute('width',width);
+ overlay.setAttribute('height',bodyHeight);
+ overlay.style.width=width+'px';
+ overlay.style.height=bodyHeight+'px';
+ grid.appendChild(overlay);
+ analystSvg=overlay;
 
  function point(ci,ri){
   const col=cols[ci],bd=col.querySelector('.analyst-body');
-  const safe=Math.max(0,Math.min(Number(ri)||0,bd.children.length-1)),cell=bd.children[safe];
-  return {x:col.offsetLeft+cell.offsetLeft+cell.offsetWidth/2,
-          y:cell.offsetTop+cell.offsetHeight/2,
-          w:cell.offsetWidth/2,h:cell.offsetHeight/2};
+  const safe=Math.max(0,Math.min(Number(ri)||0,bd.children.length-1));
+  const cell=bd.children[safe];
+  return {
+   x:col.offsetLeft+cell.offsetLeft+cell.offsetWidth/2,
+   y:cell.offsetTop+cell.offsetHeight/2
+  };
  }
- function edge(from,to){
-  const dx=to.x-from.x,dy=to.y-from.y,d=Math.hypot(dx,dy)||1;
-  const t=Math.min(dx?from.w/Math.abs(dx):Infinity,dy?from.h/Math.abs(dy):Infinity);
-  return {x:from.x+dx/d*t,y:from.y+dy/d*t};
- }
+
  const calc=[
-  n=>Math.floor(+n/100), n=>Math.floor(+n/10)%10, n=>+n%10,
+  n=>Math.floor(+n/100),
+  n=>Math.floor(+n/10)%10,
+  n=>+n%10,
   n=>(Math.floor(+n/100)+Math.floor(+n/10)%10+(+n%10))%10,
   n=>(Math.floor(+n/100)+Math.floor(+n/10)%10)%10,
   n=>(Math.floor(+n/100)+(+n%10))%10,
   n=>(Math.floor(+n/10)%10+(+n%10))%10
  ];
- const ns='http://www.w3.org/2000/svg';
+
  const defs=document.createElementNS(ns,'defs');
- defs.innerHTML='<marker id="analystArrowHead" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><path d="M0,0 L9,3.5 L0,7 Z" fill="context-stroke"/></marker>';
+ defs.innerHTML='<marker id="analystArrowHead" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="context-stroke"></path></marker>';
  overlay.appendChild(defs);
 
- function line(from,to,color,first){
-  const p=document.createElementNS(ns,'path');let d;
+ function addLine(from,to,color,first){
+  const p=document.createElementNS(ns,'path');
+  let d;
+
   if(first && Math.abs(to.y-from.y)>1){
-   const dy=to.y-from.y,dir=dy>0?1:-1,lead=Math.min(from.h*.72,Math.max(8,Math.abs(dy)*.12));
-   const q={x:from.x,y:from.y+dir*lead},t=edge(to,from);
-   d='M '+from.x+' '+from.y+' L '+q.x+' '+q.y+' C '+q.x+' '+q.y+' '+(t.x-(t.x-q.x)*.2)+' '+(t.y-(t.y-q.y)*.2)+' '+t.x+' '+t.y;
+   const dy=to.y-from.y;
+   const dir=dy>0?1:-1;
+   const lead=Math.min(18,Math.max(8,Math.abs(dy)*0.12));
+   const q={x:from.x,y:from.y+dir*lead};
+   const c1={x:q.x,y:q.y};
+   const c2={x:to.x,y:to.y-dy*0.18};
+   d='M '+from.x+' '+from.y+' L '+q.x+' '+q.y+' C '+c1.x+' '+c1.y+' '+c2.x+' '+c2.y+' '+to.x+' '+to.y;
   }else{
-   const a=edge(from,to),b=edge(to,from); d='M '+a.x+' '+a.y+' L '+b.x+' '+b.y;
+   d='M '+from.x+' '+from.y+' L '+to.x+' '+to.y;
   }
-  p.setAttribute('d',d);p.setAttribute('stroke',color);p.setAttribute('stroke-width','5');
-  p.setAttribute('fill','none');p.setAttribute('stroke-linecap','round');p.setAttribute('stroke-linejoin','round');
-  p.setAttribute('marker-end','url(#analystArrowHead)');p.setAttribute('vector-effect','non-scaling-stroke');
+
+  p.setAttribute('d',d);
+  p.setAttribute('stroke',color);
+  p.setAttribute('stroke-width','5');
+  p.setAttribute('fill','none');
+  p.setAttribute('stroke-linecap','round');
+  p.setAttribute('stroke-linejoin','round');
+  p.setAttribute('marker-end','url(#analystArrowHead)');
+  p.setAttribute('vector-effect','non-scaling-stroke');
   overlay.appendChild(p);
  }
+
  requestAnimationFrame(()=>{
   list.forEach((n,i)=>{
-   const vals=[String(n),...calc.map(f=>String(f(n)))],color=analystColors[i%6];
-   for(let j=0;j<7;j++) line(point(j,j===0?i:Number(vals[j])),point(j+1,Number(vals[j+1])),color,j===0);
+   const values=[String(n),...calc.map(fn=>String(fn(n)))];
+   const color=analystColors[i%6];
+
+   for(let j=0;j<7;j++){
+    const from=point(j,j===0?i:Number(values[j]));
+    const to=point(j+1,Number(values[j+1]));
+    addLine(from,to,color,j===0);
+   }
   });
  });
-}function setAnalystZoom(z){
+}
+
+function setAnalystZoom(z){
  analystZoom=Math.max(.4,Math.min(2.5,z));
  analystStage.style.transform='scale('+analystZoom+')';
  analystWrap.style.minHeight=Math.min(innerHeight*.65,(78+Math.max(10,parse().length)*48)*analystZoom)+'px';
