@@ -338,6 +338,16 @@ function downloadMainPng(){
    s+='<line x1="'+pa.x+'" y1="'+pa.y+'" x2="'+pb.x+'" y2="'+pb.y+'" marker-end="url(#mah)"/>';
   }
   s+='</g>';
+  // Keep the existing green arrow-number labels in the downloaded image.
+  for(let i=0;i<valid.length-1;i++){
+   const ta=cellCenterForExport(valid[i]),tb=cellCenterForExport(valid[i+1]);
+   const pa=exportEdge(ta,tb),pb=exportEdge(tb,ta);
+   const dx=pb.x-pa.x,dy=pb.y-pa.y,len=Math.hypot(dx,dy)||1;
+   const nx=-dy/len,ny=dx/len,side=(i%2?1:-1),off=30;
+   const mx=(pa.x+pb.x)/2+nx*off*side,my=(pa.y+pb.y)/2+ny*off*side;
+   s+='<rect x="'+(mx-15)+'" y="'+(my-13)+'" width="30" height="26" rx="6" fill="#12a84b" stroke="#fff" stroke-width="1"/>';
+   s+='<text x="'+mx+'" y="'+(my+5)+'" fill="#fff" font-family="Arial,sans-serif" font-size="14" font-weight="700" text-anchor="middle">'+(i+1)+'</text>';
+  }
  }
  s+='</svg>';
  status.textContent='⏳ PNG ပြုလုပ်နေပါသည်...';
