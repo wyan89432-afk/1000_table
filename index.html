@@ -29,7 +29,6 @@ button{border:0;border-radius:9px;padding:10px 17px;font-weight:bold;cursor:poin
 <div class="zoom-bar"><span class="zoom-title">🔍 Table Zoom</span><button id="zoomOut" class="secondary">−</button><button id="zoomFit">Fit Screen</button><button id="zoomIn" class="secondary">+</button><span class="zoom-value" id="zoomValue">100%</span></div>
 <div class="table-wrap" id="wrap"><div id="stage"><svg id="svgLayer"></svg><div id="movingLayer"></div><div id="catRunner">🐈<span class="cat-number" id="catNumber">1</span></div><table><thead><tr id="head"></tr></thead><tbody id="body"></tbody></table></div></div>
 </section></main><footer>1000 Table • 000 → 999 • Cat Runner</footer>
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script>
 const head=document.getElementById('head'),body=document.getElementById('body'),input=document.getElementById('numbers'),wrap=document.getElementById('wrap'),stage=document.getElementById('stage'),svg=document.getElementById('svgLayer'),cat=document.getElementById('catRunner'),catNumber=document.getElementById('catNumber'),cells=new Map(),status=document.getElementById('status');let zoom=1,catOn=false,speed=1,segments=[],running=false,stopRequested=false,runToken=0,moveOn=false,moveSpeed=1,moveRunning=false,moveToken=0;
 for(let c=0;c<10;c++){const th=document.createElement('th');th.textContent='for '+c;head.appendChild(th)}
@@ -156,33 +155,110 @@ document.getElementById('analystZoomFit').onclick=()=>{
  const w=Math.max(300,analystWrap.clientWidth-4);
  setAnalystZoom(Math.min(1,w/Math.max(1120,analystStage.scrollWidth)));
 };
-document.getElementById('analystDownload').onclick=async()=>{
- if(typeof html2canvas!=='function'){status.textContent='❌ Download library မတက်သေးပါ။';return}
- status.textContent='⏳ Analyst Table PNG ပြုလုပ်နေပါသည်...';
- const oldTransform=analystStage.style.transform;
- const oldWidth=analystStage.style.width;
- analystStage.style.transform='none';
- try{
-  await new Promise(r=>setTimeout(r,120));
-  const rect=analystStage.getBoundingClientRect();
-  const canvas=await html2canvas(analystStage,{
-   backgroundColor:'#050505',scale:1,useCORS:true,allowTaint:true,
-   width:Math.ceil(rect.width),height:Math.ceil(rect.height),
-   windowWidth:Math.max(1200,Math.ceil(rect.width)),windowHeight:Math.ceil(rect.height),logging:false,
-   onclone:(doc)=>{
-    const s=doc.getElementById('analystStage');
-    if(s){s.style.transform='none';s.style.background='#050505';s.style.width=rect.width+'px';}
-   }
-  });
-  canvas.toBlob(blob=>{
-   if(!blob){status.textContent='❌ Analyst PNG ပြုလုပ်မရပါ။';return}
-   const a=document.createElement('a');a.download='analyst-table.png';a.href=URL.createObjectURL(blob);
-   document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
-   status.textContent='✅ Analyst Table PNG Download started!';
+document.getElementById('analystDownload').onclick=()=>downloadAnalystPng();
+function svgEscape(value){
+ return String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function makePngFromSvg(svgText,width,height,filename){
+ const blob=new Blob([svgText],{type:'image/svg+xml;charset=utf-8'});
+ const url=URL.createObjectURL(blob);
+ const img=new Image();
+ img.onload=()=>{
+  const canvas=document.createElement('canvas');
+  canvas.width=Math.ceil(width);canvas.height=Math.ceil(height);
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#050505';ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.drawImage(img,0,0);
+  URL.revokeObjectURL(url);
+  canvas.toBlob(png=>{
+   if(!png){status.textContent='❌ PNG ပြုလုပ်မရပါ။';return}
+   const a=document.createElement('a');a.download=filename;a.href=URL.createObjectURL(png);
+   document.body.appendChild(a);a.click();a.remove();
+   setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+   status.textContent='✅ '+filename+' Download started!';
   },'image/png');
- }catch(e){status.textContent='❌ Analyst PNG error: '+(e&&e.message?e.message:'unknown error')}
- finally{analystStage.style.transform=oldTransform;analystStage.style.width=oldWidth;}
-};
+ };
+ img.onerror=()=>{URL.revokeObjectURL(url);status.textContent='❌ PNG renderer error.'};
+ img.src=url;
+}
+function analystArrowPath(x1,y1,x2,y2,first){
+ if(first&&Math.abs(y2-y1)>1){
+  const dy=y2-y1,dir=dy>0?1:-1,lead=Math.min(18,Math.max(8,Math.abs(dy)*.12));
+  const qx=x1,qy=y1+dir*lead,c2x=x2,c2y=y2-dy*.18;
+  return 'M '+x1+' '+y1+' L '+qx+' '+qy+' C '+qx+' '+qy+' '+c2x+' '+c2y+' '+x2+' '+y2;
+ }
+ return 'M '+x1+' '+y1+' L '+x2+' '+y2;
+}
+function downloadAnalystPng(){
+ const list=parse(),rows=Math.max(10,list.length);
+ const width=Math.max(1120,analystStage.querySelector('.analyst-grid')?.clientWidth||1120);
+ const headerH=78,rowH=48,height=headerH+rows*rowH;
+ const cols=[120,...Array(7).fill((width-120)/7)];
+ const headers=['number','hundred digit','ten digit','unit digit','BK(brake)','(Hundred +ten) digit','(Hundred +unit) digit','(unit+ten) digit'];
+ const calc=[
+  n=>Math.floor(+n/100),n=>Math.floor(+n/10)%10,n=>+n%10,
+  n=>(Math.floor(+n/100)+Math.floor(+n/10)%10+(+n%10))%10,
+  n=>(Math.floor(+n/100)+Math.floor(+n/10)%10)%10,
+  n=>(Math.floor(+n/100)+(+n%10))%10,
+  n=>(Math.floor(+n/10)%10+(+n%10))%10
+ ];
+ let x=0,s='<svg xmlns="http://www.w3.org/2000/svg" width="'+width+'" height="'+height+'" viewBox="0 0 '+width+' '+height+'">';
+ s+='<rect width="100%" height="100%" fill="#050505"/>';
+ for(let ci=0;ci<8;ci++){
+  const w=cols[ci],label=svgEscape(headers[ci]);
+  s+='<rect x="'+x+'" y="0" width="'+w+'" height="'+headerH+'" fill="#111" stroke="#4a4a4a" stroke-width="2"/>';
+  s+='<text x="'+(x+w/2)+'" y="39" fill="#fff" font-family="Arial,sans-serif" font-size="16" font-weight="800" text-anchor="middle">'+label+'</text>';
+  x+=w;
+ }
+ // grid cells first, then arrows, then numbers so arrows sit under the existing numbers
+ x=0;
+ for(let ci=0;ci<8;ci++){
+  const w=cols[ci],total=ci===0?rows:10;
+  for(let ri=0;ri<total;ri++){
+   const y=headerH+ri*rowH;
+   const fill=(ci===0&&ri<list.length)?analystColors[ri%6]:'#050505';
+   s+='<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+rowH+'" fill="'+fill+'" stroke="#444" stroke-width="1"/>';
+  }
+  x+=w;
+ }
+ // vertical borders stay visible over the dark background
+ x=0;
+ for(let ci=0;ci<8;ci++){
+  s+='<line x1="'+x+'" y1="0" x2="'+x+'" y2="'+height+'" stroke="#4a4a4a" stroke-width="2"/>';
+  x+=cols[ci];
+ }
+ s+='<line x1="'+width+'" y1="0" x2="'+width+'" y2="'+height+'" stroke="#4a4a4a" stroke-width="2"/>';
+ s+='<g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="4">';
+ list.forEach((n,i)=>{
+  const values=[String(n),...calc.map(fn=>String(fn(n)))];
+  let x1=0;
+  for(let j=0;j<7;j++){
+   const x2=x1+cols[j],x3=x2;
+   const y1=headerH+i*rowH+rowH/2;
+   const y2=headerH+Number(values[j+1])*rowH+rowH/2;
+   const color=analystColors[i%6];
+   s+='<path d="'+analystArrowPath(x1+cols[j]/2,y1,x2+cols[j+1]/2,y2,j===0?true:false)+'" stroke="'+color+'" marker-end="url(#aah)"/>';
+   x1=x2;
+  }
+ });
+ s+='</g>';
+ s+='<defs><marker id="aah" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="context-stroke"/></marker></defs>';
+ // existing numbers on top of arrows
+ x=0;
+ for(let ci=0;ci<8;ci++){
+  const w=cols[ci],total=ci===0?rows:10;
+  for(let ri=0;ri<total;ri++){
+   if(ci===0&&ri>=list.length) continue;
+   const textValue=ci===0?list[ri]:String(ri);
+   const fill='#fff',weight=ci===0?'900':'400',size=ci===0?'22':'18';
+   s+='<text x="'+(x+w/2)+'" y="'+(headerH+ri*rowH+31)+'" fill="'+fill+'" font-family="monospace" font-size="'+size+'" font-weight="'+weight+'" text-anchor="middle">'+svgEscape(textValue)+'</text>';
+  }
+  x+=w;
+ }
+ s+='</svg>';
+ status.textContent='⏳ Analyst PNG ပြုလုပ်နေပါသည်...';
+ makePngFromSvg(s,width,height,'analyst-table.png');
+}
 function setZoom(z){zoom=Math.max(.25,Math.min(1.5,z));stage.style.transform='scale('+zoom+')';wrap.style.minHeight=Math.min(innerHeight*.75,3442*zoom)+'px';document.getElementById('zoomValue').textContent=Math.round(zoom*100)+'%';draw()}
 zoomIn.onclick=()=>setZoom(zoom+.1);zoomOut.onclick=()=>setZoom(zoom-.1);zoomFit.onclick=()=>setZoom(Math.min(1,wrap.clientWidth/900));
 function parse(){return input.value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean).map(x=>{const m=x.match(/\d{1,3}/);if(!m)return null;const n=+m[0];return n<=999?String(n).padStart(3,'0'):null}).filter(Boolean)}
@@ -233,6 +309,50 @@ accUp.onclick=()=>{moveSpeed=Math.min(6,+(moveSpeed+.25).toFixed(2));accValue.te
 function runCat(){if(!segments.length){status.textContent='Arrow များဖန်တီးရန် Number အနည်းဆုံး 2 ခု Paste ချပါ။';return}if(running)return;catOn=true;stopRequested=false;running=true;const token=++runToken;catToggle.textContent='🐈 CAT ON';cat.style.display='block';status.textContent='🐈 Cat Runner looping... Stop ကိုနှိပ်မှ ရပ်မည်။';let i=0;function next(){if(stopRequested||token!==runToken){running=false;status.textContent='⏹ Cat Runner stopped.';return}if(i>=segments.length)i=0;const s=segments[i];catNumber.textContent=s.num;const dx=s.b.x-s.a.x,dy=s.b.y-s.a.y,len=Math.hypot(dx,dy),duration=Math.max(350,len*8/speed),start=performance.now();function frame(t){if(stopRequested||token!==runToken){running=false;status.textContent='⏹ Cat Runner stopped.';return}const p=Math.min(1,(t-start)/duration);cat.style.left=(s.a.x+dx*p)+'px';cat.style.top=(s.a.y+dy*p)+'px';if(p<1)requestAnimationFrame(frame);else{i++;setTimeout(next,120/speed)}}requestAnimationFrame(frame)}next()}
 catRun.onclick=runCat;
 catStop.onclick=()=>{stopRequested=true;runToken++;running=false;status.textContent='⏹ Cat Runner stopped.';};
-download.onclick=async()=>{if(typeof html2canvas!=='function'){status.textContent='❌ Download library မတက်သေးပါ။ Internet ပြန်စစ်ပြီး Retry လုပ်ပါ။';return}status.textContent='⏳ PNG ပြုလုပ်နေပါသည်...';const old=stage.style.transform;stage.style.transform='none';try{await new Promise(r=>setTimeout(r,150));const canvas=await html2canvas(stage,{backgroundColor:'#000000',scale:1,useCORS:true,allowTaint:true,width:900,height:3442,windowWidth:900,windowHeight:3442,logging:false,onclone:(doc)=>{const st=doc.getElementById('stage');if(st){st.style.backgroundColor='#000000';st.style.background='#000000';st.style.transform='none';st.style.width='900px';st.style.height='3442px';st.style.minHeight='3442px';st.style.padding='0';st.style.overflow='visible';}const t=doc.querySelector('table');if(t){t.style.backgroundColor='#111';t.style.background='#111';t.style.margin='0';t.style.color='#f2f2f2';t.querySelectorAll('th').forEach(x=>{x.style.backgroundColor='#151515';x.style.color='#f2f2f2';x.style.borderColor='#3a3a3a';x.style.position='relative';x.style.top='auto';x.style.zIndex='1'});t.querySelectorAll('td').forEach(x=>{x.style.backgroundColor=x.classList.contains('hit')?'#6f5f18':'#111';x.style.color='#f2f2f2';x.style.borderColor='#3a3a3a'});}}});stage.style.transform=old;canvas.toBlob(blob=>{if(!blob){status.textContent='❌ PNG ပြုလုပ်မရပါ။';return}const a=document.createElement('a');a.download='1000-table.png';a.href=URL.createObjectURL(blob);document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);status.textContent='✅ PNG Download started!'},'image/png');}catch(e){stage.style.transform=old;status.textContent='❌ Download error: '+(e&&e.message?e.message:'unknown error')}}
+download.onclick=()=>downloadMainPng();
+function downloadMainPng(){
+ const width=900,headerH=42,rowH=34,height=3442;
+ const list=parse(),valid=list.filter(v=>cells.has(v));
+ let s='<svg xmlns="http://www.w3.org/2000/svg" width="'+width+'" height="'+height+'" viewBox="0 0 '+width+' '+height+'">';
+ s+='<rect width="100%" height="100%" fill="#000"/>';
+ for(let c=0;c<10;c++){
+  const x=c*90;
+  s+='<rect x="'+x+'" y="0" width="90" height="'+headerH+'" fill="#151515" stroke="#3a3a3a" stroke-width="1"/>';
+  s+='<text x="'+(x+45)+'" y="27" fill="#f2f2f2" font-family="Arial,sans-serif" font-size="15" font-weight="800" text-anchor="middle">for '+c+'</text>';
+ }
+ for(let r=0;r<100;r++){
+  for(let c=0;c<10;c++){
+   const n=String(c*100+r).padStart(3,'0'),x=c*90,y=headerH+r*rowH;
+   const hit=valid.includes(n);
+   s+='<rect x="'+x+'" y="'+y+'" width="90" height="'+rowH+'" fill="'+(hit?'#6f5f18':'#111')+'" stroke="#3a3a3a" stroke-width="1"/>';
+   s+='<text x="'+(x+45)+'" y="'+(y+22)+'" fill="#f2f2f2" font-family="monospace" font-size="14" text-anchor="middle">'+n+'</text>';
+  }
+ }
+ // arrows behind the number grid text
+ if(valid.length>1){
+  s+='<defs><marker id="mah" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 Z" fill="#ff2020"/></marker></defs>';
+  s+='<g fill="none" stroke="#ff2020" stroke-width="3" stroke-linecap="round">';
+  for(let i=0;i<valid.length-1;i++){
+   const a=cells.get(valid[i]),b=cells.get(valid[i+1]);
+   const ca={x:(a.cellIndex??0),y:0};
+   const ta=cellCenterForExport(valid[i]),tb=cellCenterForExport(valid[i+1]);
+   const pa=exportEdge(ta,tb),pb=exportEdge(tb,ta);
+   s+='<line x1="'+pa.x+'" y1="'+pa.y+'" x2="'+pb.x+'" y2="'+pb.y+'" marker-end="url(#mah)"/>';
+  }
+  s+='</g>';
+ }
+ s+='</svg>';
+ status.textContent='⏳ PNG ပြုလုပ်နေပါသည်...';
+ makePngFromSvg(s,width,height,'1000-table.png');
+}
+function cellCenterForExport(v){
+ const n=Number(v),col=Math.floor(n/100),row=n%100;
+ return {x:col*90+45,y:headerH+row*rowH+rowH/2};
+}
+function exportEdge(a,b){
+ const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)||1;
+ const hw=45,hh=rowH/2,t=Math.min(Math.abs(dx)?hw/Math.abs(dx):Infinity,Math.abs(dy)?hh/Math.abs(dy):Infinity);
+ return {x:a.x+dx/d*t,y:a.y+dy/d*t};
+}
 apply.onclick=()=>{draw();analystBuild()};clear.onclick=()=>{input.value='';draw();analystBuild()};input.addEventListener('input',()=>{draw();analystBuild()});window.addEventListener('resize',()=>{analystBuild()});setTimeout(()=>{setZoom(Math.min(1,wrap.clientWidth/900));analystBuild();setAnalystZoom(Math.min(1,Math.max(300,analystWrap.clientWidth-4)/1120))},80);
 </script></body></html>
