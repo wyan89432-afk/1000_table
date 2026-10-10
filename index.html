@@ -181,9 +181,9 @@ function makePngFromSvg(svgText,width,height,filename){
 }
 function analystArrowPath(x1,y1,x2,y2,first){
  if(first&&Math.abs(y2-y1)>1){
-  const dy=y2-y1,dir=dy>0?1:-1,lead=Math.min(18,Math.max(8,Math.abs(dy)*.12));
-  const qx=x1,qy=y1+dir*lead,c2x=x2,c2y=y2-dy*.18;
-  return 'M '+x1+' '+y1+' L '+qx+' '+qy+' C '+qx+' '+qy+' '+c2x+' '+c2y+' '+x2+' '+y2;
+  const dy=y2-y1,dir=dy>0?1:-1,lead=Math.min(20,Math.max(10,Math.abs(dy)*.14));
+  const qy=y1+dir*lead;
+  return 'M '+x1+' '+y1+' L '+x1+' '+qy+' L '+x2+' '+y2;
  }
  return 'M '+x1+' '+y1+' L '+x2+' '+y2;
 }
@@ -233,7 +233,8 @@ function downloadAnalystPng(){
   let x1=0;
   for(let j=0;j<8;j++){
    const x2=x1+cols[j],x3=x2;
-   const y1=headerH+i*rowH+rowH/2;
+   const sourceRow=j===0?i:Number(values[j]);
+   const y1=headerH+sourceRow*rowH+rowH/2;
    const y2=headerH+Number(values[j+1])*rowH+rowH/2;
    const color=analystColors[i%6];
    s+='<path d="'+analystArrowPath(x1+cols[j]/2,y1,x2+cols[j+1]/2,y2,j===0?true:false)+'" stroke="'+color+'"/>';
