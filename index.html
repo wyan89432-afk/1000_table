@@ -133,6 +133,8 @@ function analystBuild(){
    const color=analystColors[i%6];
 
    for(let j=0;j<8;j++){
+    // The final link is valid only when (hundreds + tens) % 10 equals the original unit digit.
+    if(j===7 && Number(values[8])!==Number(values[3])) continue;
     const from=point(j,j===0?i:Number(values[j]));
     const to=point(j+1,Number(values[j+1]));
     addLine(from,to,color,j===0);
@@ -232,7 +234,9 @@ function downloadAnalystPng(){
   const values=[String(n),...calc.map(fn=>String(fn(n)))];
   let x1=0;
   for(let j=0;j<8;j++){
-   const x2=x1+cols[j],x3=x2;
+   // Match the on-screen rule: skip only the last link if the sum's last digit differs from unit digit.
+   if(j===7 && Number(values[8])!==Number(values[3])) continue;
+   const x2=x1+cols[j];
    const sourceRow=j===0?i:Number(values[j]);
    const y1=headerH+sourceRow*rowH+rowH/2;
    const y2=headerH+Number(values[j+1])*rowH+rowH/2;
