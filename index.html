@@ -39,7 +39,7 @@ const analystColors=['#c7a900','#20e04b','#ff3030','#248cff','#8b5a2b','#7a35d8'
 
 function hxPlusTxMatchesUx(number){
  const n=Number(number),h=Math.floor(n/100),t=Math.floor(n/10)%10,u=n%10;
- return Number.isFinite(n) && (h+t)%10===u;
+ return Number.isFinite(n) && ((h+t)%10===u || h===t);
 }
 function analystBuild(){
  const list=parse(),rows=Math.max(10,list.length);
