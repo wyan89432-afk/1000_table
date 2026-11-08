@@ -136,8 +136,11 @@ function analystBuild(){
    const color=analystColors[i%6];
 
    for(let j=0;j<11;j++){
-    // Keep hx+tx=ux: (hundreds + tens) % 10 must equal the original unit digit.
-    if(j===7 && Number(values[8])!==Number(values[3])) continue;
+    // Connect (unit+ten) to hx+tx=ux only when (hundreds+tens)%10 equals the original unit digit.
+    if(j===7){
+     const original=Number(n),h=Math.floor(original/100),t=Math.floor(original/10)%10,u=original%10;
+     if((h+t)%10!==u) continue;
+    }
     // Add hx-tx when hundreds is greater than or equal to tens; the result stays in rows 0-9.
     if(j===10 && Number(values[1])<Number(values[2])) continue;
 
@@ -241,8 +244,11 @@ function downloadAnalystPng(){
  list.forEach((n,i)=>{
   const values=[String(n),...calc.map(fn=>String(fn(n)))];
   for(let j=0;j<11;j++){
-   // Match the on-screen hx+tx=ux rule.
-   if(j===7 && Number(values[8])!==Number(values[3])) continue;
+   // Match the on-screen rule: connect (unit+ten) to hx+tx=ux only when (hundreds+tens)%10 equals units.
+   if(j===7){
+    const original=Number(n),h=Math.floor(original/100),t=Math.floor(original/10)%10,u=original%10;
+    if((h+t)%10!==u) continue;
+   }
    // Draw hx-tx when hundreds is greater than or equal to tens; the result stays in rows 0-9.
    if(j===10 && Number(values[1])<Number(values[2])) continue;
    const x1=cols.slice(0,j).reduce((sum,w)=>sum+w,0);
