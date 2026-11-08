@@ -110,7 +110,7 @@ function analystBuild(){
   n=>Math.floor(+n/100)-Math.floor(+n/10)%10
  ];
 
- function addLine(from,to,color,first){
+ function addLine(from,to,color,first,parent=overlay){
   const p=document.createElementNS(ns,'path');
   let d;
 
@@ -131,24 +131,51 @@ function analystBuild(){
   p.setAttribute('stroke-linecap','round');
   p.setAttribute('stroke-linejoin','round');
   p.setAttribute('vector-effect','non-scaling-stroke');
-  overlay.appendChild(p);
+  parent.appendChild(p);
+  return p;
  }
 
  requestAnimationFrame(()=>{
-  list.forEach((n,i)=>{
-   const values=[String(n),...calc.map(fn=>String(fn(n)))];
-   const color=analystColors[i%6];
+  const rowPaths=list.map((n,i)=>({
+   number:String(n),
+   index:i,
+   values:[String(n),...calc.map(fn=>String(fn(n)))],
+   color:analystColors[i%6]
+  }));
+
+  // Draw all ordinary column connections in separate groups, one group per pasted number.
+  rowPaths.forEach(row=>{
+   const group=document.createElementNS(ns,'g');
+   group.setAttribute('data-analyst-number',row.number);
+   group.setAttribute('data-input-index',String(row.index));
 
    for(let j=0;j<11;j++){
-    // Always connect (unit+ten) digit to hx+tx=ux for every input number.
-    // Add hx-tx when hundreds is greater than or equal to tens; the result stays in rows 0-9.
-    if(j===10 && Number(values[1])<Number(values[2])) continue;
+    // The requested column 7 -> 8 connection is drawn separately below.
+    if(j===7) continue;
+    // Preserve the existing hx-tx rule.
+    if(j===10 && Number(row.values[1])<Number(row.values[2])) continue;
 
-    const from=point(j,j===0?i:Number(values[j]));
-    const to=point(j+1,Number(values[j+1]));
-    addLine(from,to,color,j===0);
+    const from=point(j,j===0?row.index:Number(row.values[j]));
+    const to=point(j+1,Number(row.values[j+1]));
+    addLine(from,to,row.color,j===0,group);
    }
+   overlay.appendChild(group);
   });
+
+  // Draw this bridge once for EVERY pasted number, in a dedicated layer after the other paths.
+  // Existing cell text remains above the SVG.
+  const bridgeLayer=document.createElementNS(ns,'g');
+  bridgeLayer.setAttribute('data-analyst-bridge-layer','true');
+  rowPaths.forEach(row=>{
+   const group=document.createElementNS(ns,'g');
+   group.setAttribute('data-bridge-number',row.number);
+   group.setAttribute('data-bridge-values',row.values[7]+'-'+row.values[8]);
+   const from=point(7,Number(row.values[7]));
+   const to=point(8,Number(row.values[8]));
+   addLine(from,to,row.color,false,group);
+   bridgeLayer.appendChild(group);
+  });
+  overlay.appendChild(bridgeLayer);
  });
 }
 function setAnalystZoom(z){
@@ -240,12 +267,13 @@ function downloadAnalystPng(){
   x+=cols[ci];
  }
  s+='<line x1="'+width+'" y1="0" x2="'+width+'" y2="'+height+'" stroke="#4a4a4a" stroke-width="2"/>';
- s+='<g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="4">';
+ s+='<g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" data-layer="ordinary-paths">';
  list.forEach((n,i)=>{
   const values=[String(n),...calc.map(fn=>String(fn(n)))];
   for(let j=0;j<11;j++){
-    // Always connect (unit+ten) digit to hx+tx=ux for every input number.
-   // Draw hx-tx when hundreds is greater than or equal to tens; the result stays in rows 0-9.
+   // Column 7 -> 8 is drawn in a separate bridge layer below, once for each input number.
+   if(j===7) continue;
+   // Preserve the existing hx-tx rule; all other connections remain unchanged.
    if(j===10 && Number(values[1])<Number(values[2])) continue;
    const x1=cols.slice(0,j).reduce((sum,w)=>sum+w,0);
    const x2=x1+cols[j];
@@ -255,6 +283,19 @@ function downloadAnalystPng(){
    const color=analystColors[i%6];
    s+='<path d="'+analystArrowPath(x1+cols[j]/2,y1,x2+cols[j+1]/2,y2,j===0?true:false)+'" stroke="'+color+'"/>';
   }
+ });
+ s+='</g>';
+ // Dedicated top layer: connect (unit+ten) to hx+tx=ux for every pasted number.
+ s+='<g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="5" data-layer="unit-ten-to-hx-tx">';
+ list.forEach((n,i)=>{
+  const values=[String(n),...calc.map(fn=>String(fn(n)))];
+  const j=7;
+  const x1=cols.slice(0,j).reduce((sum,w)=>sum+w,0);
+  const x2=x1+cols[j];
+  const y1=headerH+Number(values[7])*rowH+rowH/2;
+  const y2=headerH+Number(values[8])*rowH+rowH/2;
+  const color=analystColors[i%6];
+  s+='<path data-bridge-number="'+svgEscape(n)+'" data-bridge-values="'+values[7]+'-'+values[8]+'" d="'+analystArrowPath(x1+cols[j]/2,y1,x2+cols[j+1]/2,y2,false)+'" stroke="'+color+'"/>';
  });
  s+='</g>';
  // Existing cell numbers are rendered last, above their colored lines.
