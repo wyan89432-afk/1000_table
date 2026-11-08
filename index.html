@@ -37,10 +37,6 @@ const analystStage=document.getElementById('analystStage'),analystWrap=document.
 let analystZoom=1;
 const analystColors=['#c7a900','#20e04b','#ff3030','#248cff','#8b5a2b','#7a35d8'];
 
-function hxPlusTxMatchesUx(number){
- const n=Number(number),h=Math.floor(n/100),t=Math.floor(n/10)%10,u=n%10;
- return Number.isFinite(n) && ((h+t)%10===u || h===t);
-}
 function analystBuild(){
  const list=parse(),rows=Math.max(10,list.length);
  const headers=['number','hundred digit','ten digit','unit digit','BK(brake)','(Hundred +ten) digit','(Hundred +unit) digit','(unit+ten) digit','hx+tx=ux','hx+ux=tx','tx+ux=hx','hx-tx'];
@@ -144,8 +140,7 @@ function analystBuild(){
    const color=analystColors[i%6];
 
    for(let j=0;j<11;j++){
-    // Connect (unit+ten) to hx+tx=ux only when (hundreds+tens)%10 equals the original unit digit.
-    if(j===7 && !hxPlusTxMatchesUx(n)) continue;
+    // Always connect (unit+ten) digit to hx+tx=ux for every input number.
     // Add hx-tx when hundreds is greater than or equal to tens; the result stays in rows 0-9.
     if(j===10 && Number(values[1])<Number(values[2])) continue;
 
@@ -249,8 +244,7 @@ function downloadAnalystPng(){
  list.forEach((n,i)=>{
   const values=[String(n),...calc.map(fn=>String(fn(n)))];
   for(let j=0;j<11;j++){
-   // Match the on-screen rule: connect (unit+ten) to hx+tx=ux only when (hundreds+tens)%10 equals units.
-   if(j===7 && !hxPlusTxMatchesUx(n)) continue;
+    // Always connect (unit+ten) digit to hx+tx=ux for every input number.
    // Draw hx-tx when hundreds is greater than or equal to tens; the result stays in rows 0-9.
    if(j===10 && Number(values[1])<Number(values[2])) continue;
    const x1=cols.slice(0,j).reduce((sum,w)=>sum+w,0);
