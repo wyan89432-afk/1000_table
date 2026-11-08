@@ -14,7 +14,7 @@ button{border:0;border-radius:9px;padding:10px 17px;font-weight:bold;cursor:poin
 #catRunner{position:absolute;z-index:10;display:none;pointer-events:none;transform:translate(-50%,-50%);font-size:34px;filter:drop-shadow(0 2px 2px #555);transition:none}
 #movingLayer{position:absolute;left:0;top:0;width:900px;height:3442px;z-index:9;pointer-events:none;display:none;overflow:visible}.movingUnit{position:absolute;left:0;top:0;width:0;height:0}.movingLine{position:absolute;height:6px;background:#ff2020;border-radius:4px;transform-origin:0 50%;box-shadow:0 0 2px #700}.movingHead{position:absolute;width:0;height:0;border-top:9px solid transparent;border-bottom:9px solid transparent;border-left:16px solid #ff2020;transform-origin:50% 50%}.movingNum{position:absolute;min-width:30px;height:24px;padding:2px 5px;border-radius:6px;background:#12a84b;color:#fff;border:2px solid #fff;text-align:center;font:bold 13px Arial;line-height:16px;transform:translate(-50%,-150%);white-space:nowrap}.cat-number{position:absolute;right:-11px;bottom:-5px;background:var(--green);color:white;border:2px solid white;border-radius:7px;min-width:27px;height:27px;padding:2px 5px;text-align:center;font:bold 14px Arial;line-height:19px}
 #status{text-align:center;color:#aab4c3;font-size:13px;margin-top:8px;min-height:18px}footer{text-align:center;color:#8090a5;padding:20px;font-size:13px}@media(max-width:600px){main{padding:9px}.panel{padding:11px}h1{font-size:25px}textarea{height:130px}.zoom-bar button,.cat-bar button{padding:9px 12px}}
-.analyst-controls{display:flex;gap:9px;justify-content:center;align-items:center;flex-wrap:wrap;background:#111a29;padding:10px;border-radius:10px;margin-bottom:10px}.analyst-wrap{position:relative;overflow:auto;background:#050505;border:2px solid #fff;border-radius:10px;max-height:75vh}.analyst-stage{position:relative;display:block;min-width:1120px;width:100%;background:#050505;transform-origin:top left}.analyst-grid{position:relative;display:grid;grid-template-columns:120px repeat(11,1fr);width:100%;min-width:1120px;background:#050505}.analyst-col{position:relative;z-index:1;border-right:2px solid #4a4a4a}.analyst-col:last-child{border-right:0}.analyst-head{height:78px;background:#111;color:#fff;border-bottom:2px solid #fff;border-top:0;font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;text-align:center;padding:4px;position:relative;z-index:5}.analyst-body{position:relative}.analyst-item{height:48px;border-bottom:1px solid #444;display:flex;align-items:center;justify-content:center;color:#fff;background:transparent;font-size:18px;font-family:monospace;position:relative;z-index:1}.analyst-item>span{position:relative;z-index:5}.analyst-num{font-size:22px;font-weight:900}.analyst-svg{position:absolute;left:0;top:78px;width:100%;height:calc(100% - 78px);z-index:3;pointer-events:none;overflow:visible;display:block}.analyst-title{margin:0 0 10px;text-align:center;color:#fff}.analyst-note{font-size:13px;color:#aab4c3;text-align:center;margin:8px 0 0}</style></head>
+.analyst-controls{display:flex;gap:9px;justify-content:center;align-items:center;flex-wrap:wrap;background:#111a29;padding:10px;border-radius:10px;margin-bottom:10px}.analyst-wrap{position:relative;overflow:auto;background:#050505;border:2px solid #fff;border-radius:10px;max-height:75vh}.analyst-stage{position:relative;display:block;min-width:1120px;width:100%;background:#050505;transform-origin:top left}.analyst-grid{position:relative;display:grid;grid-template-columns:120px repeat(11,1fr);width:100%;min-width:1120px;background:#050505}.analyst-col{position:relative;border-right:2px solid #4a4a4a}.analyst-col:last-child{border-right:0}.analyst-head{height:78px;background:#111;color:#fff;border-bottom:2px solid #fff;border-top:0;font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;text-align:center;padding:4px;position:relative;z-index:5}.analyst-body{position:relative}.analyst-item{height:48px;border-bottom:1px solid #444;display:flex;align-items:center;justify-content:center;color:#fff;background:transparent;font-size:18px;font-family:monospace;position:relative;z-index:4}.analyst-item>span{position:relative;z-index:5}.analyst-num{font-size:22px;font-weight:900}.analyst-svg{position:absolute;left:0;top:78px;width:100%;height:calc(100% - 78px);z-index:3;pointer-events:none;overflow:visible;display:block}.analyst-title{margin:0 0 10px;text-align:center;color:#fff}.analyst-note{font-size:13px;color:#aab4c3;text-align:center;margin:8px 0 0}</style></head>
 <body>
 <header><h1>1000 TABLE 🐈</h1><div class="sub">000 မှ 999 အထိ • Paste • Connect • Cat Runner</div></header>
 <main>
@@ -37,6 +37,10 @@ const analystStage=document.getElementById('analystStage'),analystWrap=document.
 let analystZoom=1;
 const analystColors=['#c7a900','#20e04b','#ff3030','#248cff','#8b5a2b','#7a35d8'];
 
+function hxPlusTxMatchesUx(number){
+ const n=Number(number),h=Math.floor(n/100),t=Math.floor(n/10)%10,u=n%10;
+ return Number.isFinite(n) && (h+t)%10===u;
+}
 function analystBuild(){
  const list=parse(),rows=Math.max(10,list.length);
  const headers=['number','hundred digit','ten digit','unit digit','BK(brake)','(Hundred +ten) digit','(Hundred +unit) digit','(unit+ten) digit','hx+tx=ux','hx+ux=tx','tx+ux=hx','hx-tx'];
@@ -86,9 +90,13 @@ function analystBuild(){
   const col=cols[ci],bd=col.querySelector('.analyst-body');
   const safe=Math.max(0,Math.min(Number(ri)||0,bd.children.length-1));
   const cell=bd.children[safe];
+  const cellRect=cell.getBoundingClientRect();
+  const svgRect=overlay.getBoundingClientRect();
+  const scaleX=(svgRect.width||width)/width;
+  const scaleY=(svgRect.height||bodyHeight)/bodyHeight;
   return {
-   x:col.offsetLeft+cell.offsetLeft+cell.offsetWidth/2,
-   y:cell.offsetTop+cell.offsetHeight/2
+   x:(cellRect.left+cellRect.width/2-svgRect.left)/scaleX,
+   y:(cellRect.top+cellRect.height/2-svgRect.top)/scaleY
   };
  }
 
@@ -137,10 +145,7 @@ function analystBuild(){
 
    for(let j=0;j<11;j++){
     // Connect (unit+ten) to hx+tx=ux only when (hundreds+tens)%10 equals the original unit digit.
-    if(j===7){
-     const original=Number(n),h=Math.floor(original/100),t=Math.floor(original/10)%10,u=original%10;
-     if((h+t)%10!==u) continue;
-    }
+    if(j===7 && !hxPlusTxMatchesUx(n)) continue;
     // Add hx-tx when hundreds is greater than or equal to tens; the result stays in rows 0-9.
     if(j===10 && Number(values[1])<Number(values[2])) continue;
 
@@ -245,10 +250,7 @@ function downloadAnalystPng(){
   const values=[String(n),...calc.map(fn=>String(fn(n)))];
   for(let j=0;j<11;j++){
    // Match the on-screen rule: connect (unit+ten) to hx+tx=ux only when (hundreds+tens)%10 equals units.
-   if(j===7){
-    const original=Number(n),h=Math.floor(original/100),t=Math.floor(original/10)%10,u=original%10;
-    if((h+t)%10!==u) continue;
-   }
+   if(j===7 && !hxPlusTxMatchesUx(n)) continue;
    // Draw hx-tx when hundreds is greater than or equal to tens; the result stays in rows 0-9.
    if(j===10 && Number(values[1])<Number(values[2])) continue;
    const x1=cols.slice(0,j).reduce((sum,w)=>sum+w,0);
