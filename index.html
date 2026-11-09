@@ -137,59 +137,50 @@ function analystBuild(){
  }
 
  requestAnimationFrame(()=>{
-  const rowPaths=list.map((n,i)=>({
-   number:String(n),
-   index:i,
-   values:[String(n),...calc.map(fn=>String(fn(n)))],
-   color:analystColors[i%6]
-  }));
-
-  // Draw all ordinary column connections in separate groups, one group per pasted number.
+  const rowPaths=list.map((n,i)=>({number:String(n),index:i,values:[String(n),...calc.map(fn=>String(fn(n)))],color:analystColors[i%6]}));
+  // One continuous path per pasted number; invalid digit rows are bypassed.
   rowPaths.forEach(row=>{
    const group=document.createElementNS(ns,'g');
    group.setAttribute('data-analyst-number',row.number);
    group.setAttribute('data-input-index',String(row.index));
-
-   for(let j=0;j<12;j++){
-    // The requested column 7 -> 8 connection is drawn separately below.
-    if(j===7) continue;
-    const hundreds=Number(row.values[1]);
-    const tens=Number(row.values[2]);
-    const units=Number(row.values[3]);
-
-    // If hx-tx is negative but hx-ux is valid, bypass hx-tx directly.
-    if(j===10 && hundreds<tens){
-     if(hundreds>=units){
-      const from=point(10,Number(row.values[10]));
-      const to=point(12,Number(row.values[12]));
-      addLine(from,to,row.color,false,group);
-     }
-     continue;
+   const validColumns=[];
+   for(let ci=0;ci<13;ci++){
+    const value=Number(row.values[ci]);
+    if(ci===0||(Number.isInteger(value)&&value>=0&&value<=9)) validColumns.push(ci);
+   }
+   const points=validColumns.map(ci=>({column:ci,point:point(ci,ci===0?row.index:Number(row.values[ci]))}));
+   if(points.length>1){
+    const first=points[0].point,second=points[1].point;
+    let d='M '+first.x+' '+first.y;
+    if(points[0].column===0&&Math.abs(second.y-first.y)>1){
+     const dy=second.y-first.y,dir=dy>0?1:-1,lead=Math.min(20,Math.max(10,Math.abs(dy)*0.14));
+     d+=' L '+first.x+' '+(first.y+dir*lead);
     }
-    // Do not draw a second segment from an invalid hx-tx column.
-    if(j===11 && (hundreds<tens || hundreds<units)) continue;
-
-    const from=point(j,j===0?row.index:Number(row.values[j]));
-    const to=point(j+1,Number(row.values[j+1]));
-    addLine(from,to,row.color,j===0,group);
+    d+=' L '+second.x+' '+second.y;
+    for(let k=2;k<points.length;k++) d+=' L '+points[k].point.x+' '+points[k].point.y;
+    const path=document.createElementNS(ns,'path');
+    path.setAttribute('d',d);path.setAttribute('stroke',row.color);path.setAttribute('stroke-width','3');
+    path.setAttribute('fill','none');path.setAttribute('stroke-linecap','round');path.setAttribute('stroke-linejoin','round');
+    path.setAttribute('vector-effect','non-scaling-stroke');path.setAttribute('data-continuous-path','true');
+    group.appendChild(path);
+    // Mark every skipped intermediate column in red at the crossed-line position.
+    for(let k=1;k<points.length;k++){
+     const previous=points[k-1],next=points[k],gap=next.column-previous.column;
+     if(gap<=1) continue;
+     for(let skipped=previous.column+1;skipped<next.column;skipped++){
+      const t=(skipped-previous.column)/gap,x=previous.point.x+(next.point.x-previous.point.x)*t;
+      const y=previous.point.y+(next.point.y-previous.point.y)*t;
+      const label=document.createElementNS(ns,'text');
+      label.textContent='လိုင်းကျော်';label.setAttribute('x',x);label.setAttribute('y',y+20);
+      label.setAttribute('fill','#ff3030');label.setAttribute('stroke','#050505');label.setAttribute('stroke-width','2.5');
+      label.setAttribute('paint-order','stroke');label.setAttribute('font-family','Arial,sans-serif');
+      label.setAttribute('font-size','11');label.setAttribute('font-weight','900');label.setAttribute('text-anchor','middle');
+      label.setAttribute('data-skipped-column',String(skipped));group.appendChild(label);
+     }
+    }
    }
    overlay.appendChild(group);
   });
-
-  // Draw this bridge once for EVERY pasted number, in a dedicated layer after the other paths.
-  // Existing cell text remains above the SVG.
-  const bridgeLayer=document.createElementNS(ns,'g');
-  bridgeLayer.setAttribute('data-analyst-bridge-layer','true');
-  rowPaths.forEach(row=>{
-   const group=document.createElementNS(ns,'g');
-   group.setAttribute('data-bridge-number',row.number);
-   group.setAttribute('data-bridge-values',row.values[7]+'-'+row.values[8]);
-   const from=point(7,Number(row.values[7]));
-   const to=point(8,Number(row.values[8]));
-   addLine(from,to,row.color,false,group);
-   bridgeLayer.appendChild(group);
-  });
-  overlay.appendChild(bridgeLayer);
  });
 }
 function setAnalystZoom(z){
@@ -282,47 +273,34 @@ function downloadAnalystPng(){
   x+=cols[ci];
  }
  s+='<line x1="'+width+'" y1="0" x2="'+width+'" y2="'+height+'" stroke="#4a4a4a" stroke-width="2"/>';
- s+='<g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" data-layer="ordinary-paths">';
+ // One continuous path per pasted number; invalid intermediate columns are skipped.
+ const pngSkipLabels=[];
  list.forEach((n,i)=>{
-  const values=[String(n),...calc.map(fn=>String(fn(n)))];
-  for(let j=0;j<12;j++){
-   // Column 7 -> 8 is drawn in a separate bridge layer below, once for each input number.
-   if(j===7) continue;
-   const hundreds=Number(values[1]);
-   const tens=Number(values[2]);
-   const units=Number(values[3]);
-   const bypassHxTx=(j===10 && hundreds<tens);
-
-   // A negative hx-tx is skipped; if hx-ux is valid, connect column 10 directly to column 12.
-   if(bypassHxTx && hundreds<units) continue;
-   // Avoid drawing a second segment from the skipped hx-tx column.
-   if(j===11 && (hundreds<tens || hundreds<units)) continue;
-
-   const targetColumn=bypassHxTx?12:j+1;
-   const x1=cols.slice(0,j).reduce((sum,w)=>sum+w,0);
-   const x2=cols.slice(0,targetColumn).reduce((sum,w)=>sum+w,0);
-   const sourceRow=j===0?i:Math.max(0,Math.min(9,Number(values[j])));
-   const y1=headerH+sourceRow*rowH+rowH/2;
-   const targetRow=Number(values[targetColumn]);
-   const y2=headerH+targetRow*rowH+rowH/2;
-   const color=analystColors[i%6];
-   s+='<path d="'+analystArrowPath(x1+cols[j]/2,y1,x2+cols[targetColumn]/2,y2,j===0?true:false)+'" stroke="'+color+'"/>';
+  const values=[String(n),...calc.map(fn=>String(fn(n)))],validColumns=[];
+  for(let ci=0;ci<13;ci++){
+   const value=Number(values[ci]);
+   if(ci===0||(Number.isInteger(value)&&value>=0&&value<=9))validColumns.push(ci);
+  }
+  const points=validColumns.map(ci=>({column:ci,x:cols.slice(0,ci).reduce((sum,w)=>sum+w,0)+cols[ci]/2,y:headerH+(ci===0?i:Number(values[ci]))*rowH+rowH/2}));
+  if(points.length>1){
+   let d='M '+points[0].x+' '+points[0].y;
+   if(points[0].column===0&&Math.abs(points[1].y-points[0].y)>1){
+    const dy=points[1].y-points[0].y,dir=dy>0?1:-1,lead=Math.min(20,Math.max(10,Math.abs(dy)*0.14));
+    d+=' L '+points[0].x+' '+(points[0].y+dir*lead);
+   }
+   d+=' L '+points[1].x+' '+points[1].y;
+   for(let k=2;k<points.length;k++)d+=' L '+points[k].x+' '+points[k].y;
+   s+='<path data-analyst-number="'+svgEscape(n)+'" data-continuous-path="true" d="'+d+'" fill="none" stroke="'+analystColors[i%6]+'" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>';
+   for(let k=1;k<points.length;k++){
+    const previous=points[k-1],next=points[k],gap=next.column-previous.column;
+    if(gap<=1)continue;
+    for(let skipped=previous.column+1;skipped<next.column;skipped++){
+     const t=(skipped-previous.column)/gap;
+     pngSkipLabels.push({x:previous.x+(next.x-previous.x)*t,y:previous.y+(next.y-previous.y)*t+20});
+    }
+   }
   }
  });
- s+='</g>';
- // Dedicated top layer: connect (unit+ten) to hx+tx=ux for every pasted number.
- s+='<g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="5" data-layer="unit-ten-to-hx-tx">';
- list.forEach((n,i)=>{
-  const values=[String(n),...calc.map(fn=>String(fn(n)))];
-  const j=7;
-  const x1=cols.slice(0,j).reduce((sum,w)=>sum+w,0);
-  const x2=x1+cols[j];
-  const y1=headerH+Number(values[7])*rowH+rowH/2;
-  const y2=headerH+Number(values[8])*rowH+rowH/2;
-  const color=analystColors[i%6];
-  s+='<path data-bridge-number="'+svgEscape(n)+'" data-bridge-values="'+values[7]+'-'+values[8]+'" d="'+analystArrowPath(x1+cols[j]/2,y1,x2+cols[j+1]/2,y2,false)+'" stroke="'+color+'"/>';
- });
- s+='</g>';
  // Existing cell numbers are rendered last, above their colored lines.
  x=0;
  for(let ci=0;ci<13;ci++){
@@ -335,6 +313,9 @@ function downloadAnalystPng(){
   }
   x+=w;
  }
+ pngSkipLabels.forEach(label=>{
+  s+='<text x="'+label.x+'" y="'+label.y+'" fill="#ff3030" stroke="#050505" stroke-width="2.5" paint-order="stroke" font-family="Arial,sans-serif" font-size="11" font-weight="900" text-anchor="middle">လိုင်းကျော်</text>';
+ });
  s+='</svg>';
  status.textContent='⏳ Analyst PNG ပြုလုပ်နေပါသည်...';
  makePngFromSvg(s,width,height,'analyst-table.png');
